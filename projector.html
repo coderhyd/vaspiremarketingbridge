@@ -1,0 +1,1677 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vaspire Projector — Guest Presentation</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c0e14;
+      --panel: #161a24;
+      --panel-soft: #202635;
+      --text: #f4f6fb;
+      --muted: #9ca7b8;
+      --line: #2d3548;
+      --accent: #20c997;
+      --accent-strong: #13a67c;
+      --danger: #ff6b6b;
+      --info: #4dabf7;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(320px, 400px) 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .controls {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 24px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .main-title-display {
+      margin: 0 0 20px;
+      font-size: 24px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #fff;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin: 24px 0 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input[type="file"],
+    input[type="tel"],
+    input[type="text"],
+    input[type="number"],
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #0f1218;
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .control-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #11141c;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    button:hover { background: #2c3447; }
+    button:disabled { cursor: not-allowed; opacity: .35; }
+
+    button.primary { background: var(--accent); color: #04100c; }
+    button.primary:hover { background: var(--accent-strong); }
+
+    .toggle-on { background: #f7b731; color: #130d02; }
+    .toggle-on:hover { background: #e0a11e; }
+    
+    .toggle-auto-on { background: var(--accent); color: #04100c; }
+    .toggle-auto-on:hover { background: var(--accent-strong); }
+
+    /* Floating Zoom Tooltip Preview */
+    .hover-zoom-preview {
+      position: fixed;
+      z-index: 9999;
+      width: 280px;
+      height: 180px;
+      background: #000;
+      border: 3px solid var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+      pointer-events: none;
+      display: none;
+      overflow: hidden;
+    }
+    .hover-zoom-preview img,
+    .hover-zoom-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .hover-zoom-preview .contact-preview-box {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+      background: #111;
+    }
+
+    .image-list { display: grid; gap: 10px; }
+
+    .image-row {
+      display: grid;
+      grid-template-columns: 24px 64px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #11141c;
+      padding: 10px;
+    }
+
+    .image-row.dragging { opacity: .4; }
+
+    .drag-handle {
+      display: grid;
+      place-items: center;
+      height: 40px;
+      color: var(--muted);
+      cursor: grab;
+      font-size: 18px;
+      user-select: none;
+    }
+
+    .image-row.active {
+      border-color: var(--accent);
+      background: #122420;
+      box-shadow: 0 0 0 2px rgba(32, 201, 151, 0.2);
+    }
+
+    .image-row img,
+    .image-row video {
+      width: 64px;
+      height: 46px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #000;
+    }
+
+    .image-details { display: grid; min-width: 0; gap: 4px; }
+
+    .image-name {
+      color: var(--muted);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-actions {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: 1fr 40px;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .remove { color: var(--danger); font-size: 16px; min-height: 32px; }
+    .manual-play { width: 100%; min-height: 32px; font-size: 12px; }
+    .play-image { background: #20c997; color: #04100c; }
+    .play-image:hover { background: #13a67c; }
+    .play-video { background: #4dabf7; color: #03101b; }
+    .play-video:hover { background: #339af0; }
+    .play-contact { background: #f7b731; color: #130d02; }
+    .play-contact:hover { background: #e0a11e; }
+
+    .stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .slide {
+      width: 100%;
+      height: 100vh;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .contact-slide {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      color: #fff;
+      padding: 80px 40px;
+      text-align: center;
+    }
+
+    .contact-card { display: grid; gap: 24px; max-width: 1100px; }
+    .contact-name { font-size: clamp(40px, 6.5vw, 90px); font-weight: 800; line-height: 1.1; }
+    .contact-mobile { color: #f7b731; font-size: clamp(30px, 4.5vw, 64px); font-weight: 800; }
+
+    .slide-animate { animation: slideFade .6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    @keyframes slideFade {
+      from { opacity: 0; transform: scale(.99); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .empty { max-width: 400px; padding: 24px; color: var(--muted); text-align: center; line-height: 1.6; font-size: 14px; }
+
+    .status-container {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .status { border-radius: 4px; background: rgba(0, 0, 0, .75); color: #dce3ef; padding: 6px 12px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); }
+    .branding-footer { color: rgba(255, 255, 255, 0.4); font-size: 11px; font-weight: 500; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); background: rgba(0, 0, 0, 0.4); padding: 4px 8px; border-radius: 4px; }
+
+    .manual-timer { margin: 0 0 16px; border-radius: 6px; background: #26160a; color: #f7b731; padding: 10px; font-size: 32px; font-weight: 800; text-align: center; border: 1px solid rgba(247, 183, 49, 0.2); }
+
+    .fullscreen .controls, :fullscreen .controls { display: none; }
+    .fullscreen.app, :fullscreen.app { display: block; }
+    .fullscreen .stage, :fullscreen .stage { height: 100vh; }
+
+    @media (max-width: 800px) {
+      body { overflow: auto; }
+      .app { grid-template-columns: 1fr; height: auto; }
+      .controls { border-right: 0; border-bottom: 1px solid var(--line); height: auto; }
+      .stage, .slide { height: 50vh; }
+    }
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.guest-panel{border:1px solid var(--line);border-radius:8px;background:#11141c;padding:14px;margin:16px 0}.guest-panel h3{margin:0 0 10px;font-size:13px;color:#fff}.guest-panel p{font-size:11px;color:var(--muted);line-height:1.5}.guest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.guest-grid button{border:1px solid var(--line);background:#202635;color:#fff;border-radius:6px;padding:9px;cursor:pointer;font-weight:700}.guest-grid button.primary{background:var(--accent);color:#07130f;border-color:var(--accent)}.qr-box{background:#fff;border-radius:8px;padding:12px;text-align:center;margin:10px 0}.qr-box canvas{max-width:100%;height:auto}.guest-url{font-size:10px;word-break:break-all;color:#9ca7b8}.guest-list{display:grid;gap:7px;margin-top:10px}.guest-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);padding:9px;border-radius:6px;background:#0f1218}.guest-item b{font-size:12px}.guest-item small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.guest-item button{background:var(--accent);border:0;border-radius:5px;padding:7px 9px;font-weight:800;cursor:pointer}.guest-mode{position:fixed;inset:0;background:#0c0e14;color:#fff;display:grid;place-items:center;z-index:9999;padding:20px}.guest-card{width:min(520px,100%);background:#161a24;border:1px solid #2d3548;border-radius:14px;padding:26px}.guest-card h1{margin:0 0 8px}.guest-card label{display:block;margin:14px 0 6px}.guest-card input{width:100%;padding:12px;border-radius:7px;border:1px solid #2d3548;background:#0f1218;color:#fff}.guest-card button{margin-top:16px;width:100%;padding:13px;border:0;border-radius:7px;background:var(--accent);font-weight:900}.guest-preview{margin-top:16px;background:#0f1218;border-radius:8px;min-height:180px;display:grid;place-items:center;overflow:hidden}.guest-preview img{max-width:100%;max-height:260px;object-fit:contain}.guest-status{font-size:12px;color:#9ca7b8;margin-top:10px}
+</style></head>
+<body>
+  <main class="app" id="app">
+    <aside class="controls">
+      <div class="main-title-display" id="panelTitleDisplay">RBG Breakfast Meeting</div>
+
+      <div class="manual-timer" id="manualTimer" hidden></div>
+
+      <div class="section-title">Global Settings</div>
+      <div class="field">
+        <label for="meetingTitleInput">Event/Meeting Title</label>
+        <input id="meetingTitleInput" type="text" value="RBG Breakfast Meeting">
+      </div>
+
+      <div class="field" id="timerField">
+        <label for="displaySeconds">Slide Interval (Seconds)</label>
+        <input id="displaySeconds" type="number" min="1" max="300" value="5">
+      </div>
+
+      <div class="section-title">Live Presentation Dashboard</div>
+      <div class="actions">
+        <button id="autoBtn" class="toggle-auto-on" disabled>Auto Loop</button>
+        <button id="manualBtn" disabled>Manual Mode</button>
+        <button id="prevBtn" disabled>Previous</button>
+        <button id="nextBtn" disabled>Next</button>
+        <button id="projectorBtn" disabled class="primary">Open Screen 2</button>
+        <div class="guest-panel">
+          <h3>Guest Presentations</h3>
+          <p>Create a meeting QR so every guest can upload their own slide and press <b>PLAY MY SLIDE</b> from their phone.</p>
+          <div class="guest-grid"><button id="guestQrBtn" class="primary">Generate Guest QR</button><button id="guestUrlBtn">Copy Guest Link</button></div>
+          <div id="guestQrBox" class="qr-box" hidden><canvas id="guestQrCanvas"></canvas><div id="guestUrlText" class="guest-url"></div><div id="guestMeetingStatus" class="guest-url" style="margin-top:8px"></div></div>
+          <div id="guestList" class="guest-list"></div><div id="guestLiveStatus" class="guest-url" style="margin-top:8px;color:#20c997">Live guest monitor: connecting…</div>
+        </div>
+        <button id="fullscreenBtn" disabled>Fullscreen</button>
+        <button id="animationBtn" class="toggle-on">Animation ON</button>
+        <button id="soundBtn" class="toggle-on">Sound ON</button>
+        <button id="clearBtn" disabled style="grid-column: span 2; color: var(--danger);">Clear Playlist</button>
+      </div>
+
+      <div class="section-title">Directory Automation</div>
+      <div class="actions" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+        <button id="loadFolderBtn" class="primary">Load Project Folder</button>
+        <button id="saveFolderBtn" disabled>Save Project Folder</button>
+      </div>
+
+      <div class="section-title">Media & Guest Entry</div>
+      <div class="field">
+        <label for="imageUpload">Upload Images / Videos</label>
+        <input id="imageUpload" type="file" accept="image/*,video/*" multiple>
+      </div>
+
+      <div class="control-box">
+        <label style="color: #fff; display:block; margin-bottom:8px;">Fast-Add Guest Slide</label>
+        <div class="field">
+          <input id="guestName" type="text" placeholder="Guest Name">
+        </div>
+        <div class="field">
+          <input id="guestMobile" type="tel" placeholder="Mobile Number">
+        </div>
+        <button class="manual-play" id="addContactBtn" style="width:100%;" disabled>Inject Name Slide</button>
+      </div>
+
+      <div class="section-title">Active Playback Queue</div>
+      <div class="field" style="margin-bottom: 12px;">
+        <input id="mediaSearchInput" type="search" placeholder="🔍 Search assets, aliases or guests...">
+      </div>
+      <div class="contact-list" id="contactList"></div>
+      <div class="image-list" id="imageList"></div>
+    </aside>
+
+    <section class="stage">
+      <img class="slide" id="slide" alt="" hidden>
+      <video class="slide" id="videoSlide" hidden playsinline></video>
+      <div class="contact-slide" id="contactSlide" hidden>
+        <div class="contact-card">
+          <div class="contact-name" id="contactSlideName"></div>
+          <div class="contact-mobile" id="contactSlideMobile"></div>
+        </div>
+      </div>
+      <div class="empty" id="emptyState">No operational assets staged. Populate media options to engage loop engines.</div>
+      
+      <div class="status-container">
+        <div class="status" id="status">No items active</div>
+        <div class="branding-footer">Designed and developed by Vaspire Marketing, Ph : 9700049911</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="hoverPreview" class="hover-zoom-preview"></div>
+
+  <script>
+    const app = document.getElementById('app');
+    const upload = document.getElementById('imageUpload');
+    const displaySecondsInput = document.getElementById('displaySeconds');
+    const timerField = document.getElementById('timerField');
+    const meetingTitleInput = document.getElementById('meetingTitleInput');
+    const panelTitleDisplay = document.getElementById('panelTitleDisplay');
+    const guestNameInput = document.getElementById('guestName');
+    const guestMobileInput = document.getElementById('guestMobile');
+    const contactList = document.getElementById('contactList');
+    const imageList = document.getElementById('imageList');
+    const mediaSearchInput = document.getElementById('mediaSearchInput');
+    const slide = document.getElementById('slide');
+    const videoSlide = document.getElementById('videoSlide');
+    const contactSlide = document.getElementById('contactSlide');
+    const contactSlideName = document.getElementById('contactSlideName');
+    const contactSlideMobile = document.getElementById('contactSlideMobile');
+    const emptyState = document.getElementById('emptyState');
+    const manualTimer = document.getElementById('manualTimer');
+    const statusText = document.getElementById('status');
+    const autoBtn = document.getElementById('autoBtn');
+    const manualBtn = document.getElementById('manualBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const projectorBtn = document.getElementById('projectorBtn');
+    const addContactBtn = document.getElementById('addContactBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const animationBtn = document.getElementById('animationBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveFolderBtn = document.getElementById('saveFolderBtn');
+    const loadFolderBtn = document.getElementById('loadFolderBtn');
+    const hoverPreview = document.getElementById('hoverPreview');
+
+    let images = [];
+    let contactSlides = [];
+    let currentIndex = 0;
+    let timer = null;
+    let isAutoMode = true; 
+    let projectorWindow = null;
+    let animationEnabled = true;
+    let soundEnabled = true;
+    let countdownTimer = null;
+    let lastTickSecond = null;
+    let audioContext = null;
+
+    // Load LocalStorage Configurations
+    if(localStorage.getItem('rbg_title')) {
+      meetingTitleInput.value = localStorage.getItem('rbg_title');
+      panelTitleDisplay.textContent = meetingTitleInput.value;
+    }
+    if(localStorage.getItem('rbg_seconds')) {
+      displaySecondsInput.value = localStorage.getItem('rbg_seconds');
+    }
+
+    function displaySeconds() {
+      return Math.max(1, Number(displaySecondsInput.value) || 5);
+    }
+
+    function ensureAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+
+    function playTone(frequency, duration, volume) {
+      if (!soundEnabled) return; 
+      try {
+        ensureAudio();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        gain.gain.value = volume;
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        oscillator.stop(audioContext.currentTime + duration);
+      } catch(e) { console.warn("Audio feedback block:", e); }
+    }
+
+    function playTick() { playTone(900, .08, .16); }
+    function playBell() {
+      playTone(660, .18, .22);
+      window.setTimeout(() => playTone(880, .24, .2), 160);
+    }
+
+    function setManualTimerText(text) {
+      manualTimer.textContent = text;
+      manualTimer.hidden = !text;
+    }
+
+    function stopManualCountdown() {
+      if (countdownTimer) { window.clearInterval(countdownTimer); countdownTimer = null; }
+      lastTickSecond = null;
+      setManualTimerText('');
+    }
+
+    function updateManualCountdown(remainingSeconds) {
+      const remaining = Math.max(0, Math.ceil(remainingSeconds));
+      setManualTimerText(String(remaining));
+      if (remaining <= 5 && remaining > 0 && remaining !== lastTickSecond) {
+        lastTickSecond = remaining;
+        playTick();
+      }
+    }
+
+    function startManualCountdown(seconds) {
+      stopManualCountdown();
+      const endsAt = Date.now() + seconds * 1000;
+      updateManualCountdown(seconds);
+      countdownTimer = window.setInterval(() => {
+        updateManualCountdown((endsAt - Date.now()) / 1000);
+      }, 200);
+    }
+
+    function startManualVideoCountdown(videoElement) {
+      stopManualCountdown();
+      countdownTimer = window.setInterval(() => {
+        if (!videoElement.duration || Number.isNaN(videoElement.duration)) return;
+        updateManualCountdown(videoElement.duration - videoElement.currentTime);
+      }, 200);
+    }
+
+    function orderedSlides() {
+      return [...images, ...contactSlides].sort((a, b) => a.order - b.order);
+    }
+
+    function nextOrder() {
+      const orders = orderedSlides().map((item) => item.order || 0);
+      return orders.length ? Math.max(...orders) + 1 : 1;
+    }
+
+    function applySlideOrder(ids) {
+      ids.forEach((id, index) => {
+        const slideItem = [...images, ...contactSlides].find((item) => item.id === id);
+        if (slideItem) slideItem.order = index + 1;
+      });
+    }
+
+    function updateButtons() {
+      const hasSlides = orderedSlides().length > 0;
+      autoBtn.disabled = !hasSlides;
+      manualBtn.disabled = !hasSlides;
+      prevBtn.disabled = !hasSlides;
+      nextBtn.disabled = !hasSlides;
+      projectorBtn.disabled = !hasSlides;
+      addContactBtn.disabled = !hasContactInput();
+      fullscreenBtn.disabled = !hasSlides;
+      clearBtn.disabled = images.length === 0 && contactSlides.length === 0;
+      saveFolderBtn.disabled = !hasSlides;
+
+      autoBtn.classList.toggle('toggle-auto-on', isAutoMode);
+      manualBtn.classList.toggle('toggle-on', !isAutoMode);
+      timerField.style.opacity = isAutoMode ? "1" : "0.3";
+    }
+
+    function updateStatus(total, ordered) {
+      if (!total) {
+        statusText.textContent = 'Staging interface empty';
+        return;
+      }
+      const shown = ordered[currentIndex];
+      const typeLabel = shown.type === 'contact' ? 'Name Slide' : shown.type === 'video' ? 'Video' : 'Image';
+      statusText.textContent = `Asset ${currentIndex + 1} of ${total} | ${typeLabel} | Engine: ${isAutoMode ? 'Auto' : 'Manual'}`;
+    }
+
+    function showCurrent() {
+      const ordered = orderedSlides();
+      if (!ordered.length) {
+        slide.hidden = true;
+        videoSlide.hidden = true;
+        contactSlide.hidden = true;
+        videoSlide.pause();
+        videoSlide.removeAttribute('src');
+        emptyState.hidden = false;
+        updateStatus(0, ordered);
+        updateButtons();
+        syncProjector();
+        return;
+      }
+
+      currentIndex = (currentIndex + ordered.length) % ordered.length;
+      const current = ordered[currentIndex];
+      videoSlide.muted = !soundEnabled;
+
+      if (current.type === 'video') {
+        slide.hidden = true;
+        contactSlide.hidden = true;
+        slide.removeAttribute('src');
+        videoSlide.src = current.url;
+        videoSlide.hidden = false;
+        videoSlide.currentTime = 0;
+        runTransition(videoSlide);
+        videoSlide.play().catch((e) => console.warn("Video block averted:", e));
+      } else if (current.type === 'contact') {
+        videoSlide.pause();
+        videoSlide.hidden = true;
+        videoSlide.removeAttribute('src');
+        slide.hidden = true;
+        slide.removeAttribute('src');
+        contactSlideName.textContent = current.name || '';
+        contactSlideMobile.textContent = current.mobile || '';
+        contactSlide.hidden = false;
+        runTransition(contactSlide);
+      } else {
+        videoSlide.pause();
+        videoSlide.hidden = true;
+        videoSlide.removeAttribute('src');
+        contactSlide.hidden = true;
+        slide.src = current.url;
+        slide.alt = current.displayName || current.name;
+        slide.hidden = false;
+        runTransition(slide);
+      }
+
+      emptyState.hidden = true;
+      updateStatus(ordered.length, ordered);
+      updateButtons();
+      updateActiveRows();
+      syncProjector();
+    }
+
+    function runTransition(element) {
+      if (!animationEnabled || !element) return;
+      element.classList.remove('slide-animate');
+      void element.offsetWidth;
+      element.classList.add('slide-animate');
+    }
+
+    function updateAnimationButton() {
+      animationBtn.textContent = animationEnabled ? 'Animation ON' : 'Animation OFF';
+      animationBtn.classList.toggle('toggle-on', animationEnabled);
+    }
+
+    function updateSoundButton() {
+      soundBtn.textContent = soundEnabled ? 'Sound ON' : 'Sound OFF';
+      soundBtn.classList.toggle('toggle-on', soundEnabled);
+      videoSlide.muted = !soundEnabled;
+      if (projectorWindow && !projectorWindow.closed) {
+        const projectorVideo = projectorWindow.document.getElementById('projectorVideo');
+        if (projectorVideo) projectorVideo.muted = !soundEnabled;
+      }
+    }
+
+    function hasContactInput() {
+      return Boolean(guestNameInput.value.trim() || guestMobileInput.value.trim());
+    }
+
+    function addContactSlide() {
+      ensureAudio();
+      const guestName = guestNameInput.value.trim();
+      const guestMobile = guestMobileInput.value.trim();
+      if (!guestName && !guestMobile) return;
+
+      contactSlides.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : `contact-${Date.now()}-${contactSlides.length}`,
+        name: guestName,
+        mobile: guestMobile,
+        order: nextOrder(),
+        type: 'contact'
+      });
+
+      guestNameInput.value = '';
+      guestMobileInput.value = '';
+      renderList();
+      showCurrent();
+      if (isAutoMode) resetAndStartTimer();
+    }
+
+    function updateAddContactButton() {
+      addContactBtn.disabled = !hasContactInput();
+    }
+
+    function safeFileName(name) {
+      return name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+    }
+
+    async function saveMediaFolder() {
+      if (!window.showDirectoryPicker) {
+        alert('Advanced directory storage is supported native to Chrome or Edge systems.');
+        return;
+      }
+      const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const playlist = [];
+
+      for (const item of orderedSlides()) {
+        if (item.type === 'contact') {
+          playlist.push({ type: 'contact', name: item.name, mobile: item.mobile, order: item.order });
+          continue;
+        }
+        if (!item.file) {
+          alert(`Original file data un-staged for "${item.name}". Re-staged files are required prior to local compile.`);
+          return;
+        }
+
+        const filename = `${String(item.order).padStart(3, '0')}-${safeFileName(item.name)}`;
+        const handle = await dir.getFileHandle(filename, { create: true });
+        const writable = await handle.createWritable();
+        await writable.write(item.file);
+        await writable.close();
+
+        playlist.push({
+          type: item.type,
+          name: item.name,
+          fileName: item.fileName || item.name,
+          displayName: item.displayName || '',
+          filename,
+          order: item.order
+        });
+      }
+
+      const playlistHandle = await dir.getFileHandle('rbg-media-list.json', { create: true });
+      const playlistWritable = await playlistHandle.createWritable();
+      await playlistWritable.write(JSON.stringify({ version: 1, items: playlist }, null, 2));
+      await playlistWritable.close();
+      alert('Local storage compile complete. Catalog synchronized successfully.');
+    }
+
+    async function loadMediaFolder() {
+      if (!window.showDirectoryPicker) {
+        alert('Advanced directory storage is supported native to Chrome or Edge systems.');
+        return;
+      }
+      const dir = await window.showDirectoryPicker({ mode: 'read' });
+      const playlistFile = await (await dir.getFileHandle('rbg-media-list.json')).getFile();
+      const playlist = JSON.parse(await playlistFile.text());
+
+      stopTimer();
+      images.forEach((image) => URL.revokeObjectURL(image.url));
+      images = [];
+      contactSlides = [];
+
+      for (const [index, item] of playlist.items.entries()) {
+        const id = crypto.randomUUID ? crypto.randomUUID() : `loaded-${Date.now()}-${index}`;
+        if (item.type === 'contact') {
+          contactSlides.push({ id, type: 'contact', name: item.name || '', mobile: item.mobile || '', order: item.order || index + 1 });
+          continue;
+        }
+        const file = await (await dir.getFileHandle(item.filename)).getFile();
+        images.push({
+          id,
+          type: item.type,
+          name: item.displayName || item.name || file.name,
+          fileName: item.fileName || item.name || file.name,
+          displayName: item.displayName || '',
+          order: item.order || index + 1,
+          file,
+          url: URL.createObjectURL(file)
+        });
+      }
+
+      currentIndex = 0;
+      mediaSearchInput.value = '';
+      renderList();
+      showCurrent();
+      if (isAutoMode) resetAndStartTimer();
+    }
+
+    function updateActiveRows() {
+      const ordered = orderedSlides();
+      const activeImage = ordered[currentIndex];
+      document.querySelectorAll('.image-row').forEach((row) => {
+        row.classList.toggle('active', Boolean(activeImage && row.dataset.imageId === activeImage.id));
+      });
+    }
+
+    function syncProjector() {
+      if (!projectorWindow || projectorWindow.closed) return;
+
+      const ordered = orderedSlides();
+      const projectorImage = projectorWindow.document.getElementById('projectorSlide');
+      const projectorVideo = projectorWindow.document.getElementById('projectorVideo');
+      const projectorContact = projectorWindow.document.getElementById('projectorContact');
+      const projectorContactName = projectorWindow.document.getElementById('projectorContactName');
+      const projectorContactMobile = projectorWindow.document.getElementById('projectorContactMobile');
+      const projectorEmpty = projectorWindow.document.getElementById('projectorEmpty');
+      const projectorStatus = projectorWindow.document.getElementById('projectorStatus');
+      const projectorTitle = projectorWindow.document.getElementById('draggableTitle');
+
+      if (projectorTitle) { projectorTitle.textContent = meetingTitleInput.value; }
+      if (!ordered.length) {
+        projectorImage.hidden = true; projectorVideo.hidden = true; projectorContact.hidden = true;
+        projectorVideo.pause(); projectorVideo.removeAttribute('src');
+        projectorEmpty.hidden = false;
+        projectorStatus.textContent = 'Staging System Empty';
+        return;
+      }
+
+      const image = ordered[currentIndex];
+      projectorVideo.muted = !soundEnabled;
+
+      if (image.type === 'video') {
+        projectorImage.hidden = true; projectorContact.hidden = true; projectorImage.removeAttribute('src');
+        projectorVideo.src = image.url; projectorVideo.hidden = false; projectorVideo.currentTime = 0;
+        runProjectorTransition(projectorVideo);
+        projectorVideo.play().catch((e) => console.warn("Video block averted:", e));
+      } else if (image.type === 'contact') {
+        projectorVideo.pause(); projectorVideo.hidden = true; projectorVideo.removeAttribute('src');
+        projectorImage.hidden = true; projectorImage.removeAttribute('src');
+        projectorContactName.textContent = image.name || '';
+        projectorContactMobile.textContent = image.mobile || '';
+        projectorContact.hidden = false;
+        runProjectorTransition(projectorContact);
+      } else {
+        projectorVideo.pause(); projectorVideo.hidden = true; projectorVideo.removeAttribute('src'); projectorContact.hidden = true;
+        projectorImage.src = image.url; projectorImage.alt = image.displayName || image.name; projectorImage.hidden = false;
+        runProjectorTransition(projectorImage);
+      }
+
+      projectorEmpty.hidden = true;
+      const typeLabel = image.type === 'contact' ? 'Name Slide' : image.type === 'video' ? 'Video' : 'Image';
+      projectorStatus.textContent = `Asset ${currentIndex + 1} of ${ordered.length} | ${typeLabel}`;
+    }
+
+    function runProjectorTransition(element) {
+      if (!animationEnabled || !element) return;
+      element.classList.remove('slide-animate');
+      void element.offsetWidth;
+      element.classList.add('slide-animate');
+    }
+
+    function openProjectorWindow() {
+      ensureAudio();
+      const left = window.screen.availLeft + window.screen.availWidth;
+      const features = `popup=yes,left=${left},top=0,width=${window.screen.availWidth},height=${window.screen.availHeight}`;
+      const logoUrl = new URL('assets/logo-rbg.jpeg', window.location.href).href;
+      const initialText = meetingTitleInput.value;
+      projectorWindow = window.open('', 'projectorScreen', features);
+
+      if (!projectorWindow) {
+        alert('Popup blockage intercepted. Authorize desktop layer popups, then re-engage Screen 2.');
+        return;
+      }
+
+      projectorWindow.document.open();
+      projectorWindow.document.write(`
+        <!doctype html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Projector Screen Presentation Layer</title>
+          <style>
+            html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; color: #cfd7e6; font-family: system-ui, -apple-system, sans-serif; }
+            [hidden] { display: none !important; }
+            body { display: grid; place-items: center; }
+            img, video { width: 100vw; height: 100vh; object-fit: contain; background: #000; }
+            .slide-animate { animation: slideFade .6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+            @keyframes slideFade { from { opacity: 0; transform: scale(.99); } to { opacity: 1; transform: scale(1); } }
+            .empty { padding: 24px; text-align: center; font-size: 18px; color: #626d85; }
+            .status-overlay { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; z-index: 5; pointer-events: none; }
+            .status { border-radius: 4px; background: rgba(0, 0, 0, .75); padding: 6px 12px; font-size: 12px; font-weight:600; border:1px solid rgba(255,255,255,0.08); }
+            .projector-branding { color: rgba(255, 255, 255, 0.35); font-size: 11px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9); background: rgba(0, 0, 0, 0.4); padding: 4px 8px; border-radius: 4px; }
+            .logo { position: fixed; top: 24px; right: 24px; z-index: 3; width: min(22vw, 240px); max-height: 110px; object-fit: contain; border-radius: 6px; background: rgba(255, 255, 255, .95); box-shadow: 0 12px 32px rgba(0, 0, 0, .4); }
+            .meeting-title { position: fixed; top: 24px; left: 24px; z-index: 4; color: #fff; font-size: clamp(24px, 3.5vw, 56px); font-weight: 900; text-shadow: 0 4px 16px rgba(0, 0, 0, .85); cursor: move; user-select: none; padding: 6px 12px; }
+            .meeting-title:hover { background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+            .contact-slide { display: grid; place-items: center; width: 100vw; height: 100vh; color: #fff; padding: 80px; text-align: center; }
+            .contact-card { display: grid; gap: 24px; max-width: 1100px; }
+            .contact-name { font-size: clamp(44px, 7vw, 96px); font-weight: 800; line-height: 1.1; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+            .contact-mobile { color: #f7b731; font-size: clamp(32px, 5vw, 68px); font-weight: 800; text-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+            :fullscreen .status-overlay { display: none; }
+          </style>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.guest-panel{border:1px solid var(--line);border-radius:8px;background:#11141c;padding:14px;margin:16px 0}.guest-panel h3{margin:0 0 10px;font-size:13px;color:#fff}.guest-panel p{font-size:11px;color:var(--muted);line-height:1.5}.guest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.guest-grid button{border:1px solid var(--line);background:#202635;color:#fff;border-radius:6px;padding:9px;cursor:pointer;font-weight:700}.guest-grid button.primary{background:var(--accent);color:#07130f;border-color:var(--accent)}.qr-box{background:#fff;border-radius:8px;padding:12px;text-align:center;margin:10px 0}.qr-box canvas{max-width:100%;height:auto}.guest-url{font-size:10px;word-break:break-all;color:#9ca7b8}.guest-list{display:grid;gap:7px;margin-top:10px}.guest-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);padding:9px;border-radius:6px;background:#0f1218}.guest-item b{font-size:12px}.guest-item small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.guest-item button{background:var(--accent);border:0;border-radius:5px;padding:7px 9px;font-weight:800;cursor:pointer}.guest-mode{position:fixed;inset:0;background:#0c0e14;color:#fff;display:grid;place-items:center;z-index:9999;padding:20px}.guest-card{width:min(520px,100%);background:#161a24;border:1px solid #2d3548;border-radius:14px;padding:26px}.guest-card h1{margin:0 0 8px}.guest-card label{display:block;margin:14px 0 6px}.guest-card input{width:100%;padding:12px;border-radius:7px;border:1px solid #2d3548;background:#0f1218;color:#fff}.guest-card button{margin-top:16px;width:100%;padding:13px;border:0;border-radius:7px;background:var(--accent);font-weight:900}.guest-preview{margin-top:16px;background:#0f1218;border-radius:8px;min-height:180px;display:grid;place-items:center;overflow:hidden}.guest-preview img{max-width:100%;max-height:260px;object-fit:contain}.guest-status{font-size:12px;color:#9ca7b8;margin-top:10px}
+</style></head>
+        <body>
+          <img id="projectorSlide" alt="" hidden>
+          <video id="projectorVideo" hidden playsinline></video>
+          <div class="meeting-title" id="draggableTitle">${initialText}</div>
+          <img class="logo" src="${logoUrl}" alt="Reddy Business Group">
+          <div class="contact-slide" id="projectorContact" hidden>
+            <div class="contact-card">
+              <div class="contact-name" id="projectorContactName"></div>
+              <div class="contact-mobile" id="projectorContactMobile"></div>
+            </div>
+          </div>
+          <div class="empty" id="projectorEmpty">Target terminal linked. Transfer window layout to secondary monitor and trigger F11 Fullscreen execution.</div>
+          <div class="status-overlay">
+            <div class="status" id="projectorStatus">Engine Initialized</div>
+            <div class="projector-branding">Designed and developed by Vaspire Marketing, Ph : 9700049911</div>
+          </div>
+
+          <script>
+            const el = document.getElementById('draggableTitle');
+            let isDragging = false;
+            let startX, startY;
+            let currentX = 24; let currentY = 24; 
+
+            function dragStart(e) {
+              isDragging = true;
+              const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+              const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+              startX = clientX - currentX; startY = clientY - currentY;
+            }
+            function dragMove(e) {
+              if (!isDragging) return;
+              e.preventDefault();
+              const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+              const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+              currentX = clientX - startX; currentY = clientY - startY;
+              el.style.left = currentX + 'px'; el.style.top = currentY + 'px';
+            }
+            function dragEnd() { isDragging = false; }
+
+            el.addEventListener('mousedown', dragStart);
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
+            el.addEventListener('touchstart', dragStart, { passive: false });
+            window.addEventListener('touchmove', dragMove, { passive: false });
+            window.addEventListener('touchend', dragEnd);
+          <\/script>
+        
+
+
+</body>
+        </html>
+      `);
+      projectorWindow.document.close();
+      projectorWindow.focus();
+      syncProjector();
+    }
+
+    function switchToAutoMode() { ensureAudio(); isAutoMode = true; resetAndStartTimer(); updateButtons(); showCurrent(); }
+    function switchToManualMode() { ensureAudio(); isAutoMode = false; stopTimer(); updateButtons(); showCurrent(); }
+
+    function stopTimer() {
+      if (timer) { if (timer !== 'video') window.clearTimeout(timer); timer = null; }
+      stopManualCountdown();
+      videoSlide.onended = null;
+      if (projectorWindow && !projectorWindow.closed) {
+        const projectorVideo = projectorWindow.document.getElementById('projectorVideo');
+        if (projectorVideo) projectorVideo.onended = null;
+      }
+    }
+
+    function resetAndStartTimer() {
+      stopTimer();
+      if (!isAutoMode || !orderedSlides().length) return;
+
+      const ordered = orderedSlides();
+      const current = ordered[currentIndex];
+      if (!current) return;
+
+      if (current.type === 'video') {
+        timer = 'video';
+        videoSlide.onended = goNextFromTimer;
+        startManualVideoCountdown(videoSlide);
+        if (projectorWindow && !projectorWindow.closed) {
+          const projectorVideo = projectorWindow.document.getElementById('projectorVideo');
+          if (projectorVideo) projectorVideo.onended = goNextFromTimer;
+        }
+        return;
+      }
+
+      startManualCountdown(displaySeconds());
+      timer = window.setTimeout(goNextFromTimer, displaySeconds() * 1000);
+    }
+
+    function goNextFromTimer() {
+      if (!isAutoMode || !timer) return;
+      playBell(); stopTimer(); currentIndex += 1; showCurrent(); resetAndStartTimer();
+    }
+
+    function forcePlaySelected(id, isContact = false) {
+      ensureAudio();
+      const ordered = orderedSlides();
+      const targetIndex = ordered.findIndex((item) => item.id === id);
+      if (targetIndex === -1) return;
+      currentIndex = targetIndex;
+      if (isAutoMode) { showCurrent(); resetAndStartTimer(); } else { stopTimer(); showCurrent(); }
+    }
+
+    // Attach Hover Zoom Events dynamically to targets
+    function attachHoverZoom(element, slideItem) {
+      element.addEventListener('mouseenter', (e) => {
+        hoverPreview.innerHTML = '';
+        if (slideItem.type === 'video') {
+          const vid = document.createElement('video');
+          vid.src = slideItem.url;
+          vid.muted = true;
+          vid.autoplay = true;
+          vid.loop = true;
+          hoverPreview.appendChild(vid);
+        } else if (slideItem.type === 'contact') {
+          const div = document.createElement('div');
+          div.className = 'contact-preview-box';
+          div.innerHTML = `<strong style="font-size:18px; color:#fff; display:block; margin-bottom:8px;">${slideItem.name || 'Name Slide'}</strong><span style="color:#f7b731; font-weight:bold; font-size:14px;">${slideItem.mobile || ''}</span>`;
+          hoverPreview.appendChild(div);
+        } else {
+          const img = document.createElement('img');
+          img.src = slideItem.url;
+          hoverPreview.appendChild(img);
+        }
+        hoverPreview.style.display = 'block';
+      });
+
+      element.addEventListener('mousemove', (e) => {
+        const offsetMouseX = 20;
+        const offsetMouseY = 20;
+        let positionX = e.clientX + offsetMouseX;
+        let positionY = e.clientY + offsetMouseY;
+
+        if (positionX + 280 > window.innerWidth) {
+          positionX = e.clientX - 280 - offsetMouseX;
+        }
+        if (positionY + 180 > window.innerHeight) {
+          positionY = e.clientY - 180 - offsetMouseY;
+        }
+
+        hoverPreview.style.left = `${positionX}px`;
+        hoverPreview.style.top = `${positionY}px`;
+      });
+
+      element.addEventListener('mouseleave', () => {
+        hoverPreview.style.display = 'none';
+        hoverPreview.innerHTML = '';
+      });
+    }
+
+    function renderList() {
+      imageList.innerHTML = '';
+      const activeSlide = orderedSlides()[currentIndex];
+      const query = mediaSearchInput.value.toLowerCase().trim();
+
+      orderedSlides().forEach((item) => {
+        // Evaluate Filter Matches (Search against name, original file name, display overrides, or mobile text)
+        const matchName = (item.name || '').toLowerCase().includes(query);
+        const matchFileName = (item.fileName || '').toLowerCase().includes(query);
+        const matchDisplayName = (item.displayName || '').toLowerCase().includes(query);
+        const matchMobile = (item.mobile || '').toLowerCase().includes(query);
+
+        if (query && !matchName && !matchFileName && !matchDisplayName && !matchMobile) {
+          return; // Skip rendering if query fails
+        }
+
+        const row = document.createElement('div');
+        row.className = 'image-row';
+        row.dataset.imageId = item.id;
+        row.draggable = !query; // Disable drag ordering if search string active to avoid matrix errors
+        if (!query) {
+          row.addEventListener('dragstart', () => row.classList.add('dragging'));
+          row.addEventListener('dragend', () => { row.classList.remove('dragging'); saveDraggedOrder(); });
+        } else {
+          row.querySelector('.drag-handle')?.style.setProperty('cursor', 'not-allowed');
+        }
+
+        row.classList.toggle('active', Boolean(activeSlide && activeSlide.id === item.id));
+
+        const details = document.createElement('div');
+        details.className = 'image-details';
+
+        if (item.type === 'contact') {
+          const badge = document.createElement('div');
+          badge.className = 'contact-row-title';
+          badge.style.fontSize = '12px';
+          badge.style.fontWeight = '800';
+          badge.textContent = item.name || 'Anonymous Guest';
+
+          const mobile = document.createElement('div');
+          mobile.className = 'image-name';
+          mobile.textContent = item.mobile || 'No Contact Data';
+
+          details.append(badge, mobile);
+          row.append(makeDragHandle(), details);
+          row.append(makeRowActions(
+            'Deploy Live', 'Show this name slide now', 'play-contact',
+            () => forcePlaySelected(item.id, true),
+            makeRemoveButton('Purge Asset', () => {
+              contactSlides = contactSlides.filter((contact) => contact.id !== item.id);
+              currentIndex = Math.min(currentIndex, Math.max(0, orderedSlides().length - 1));
+              if (!orderedSlides().length) stopTimer();
+              renderList(); showCurrent();
+              if (isAutoMode) resetAndStartTimer();
+            })
+          ));
+          attachHoverZoom(details, item);
+        } else {
+          const thumb = document.createElement(item.type === 'video' ? 'video' : 'img');
+          thumb.src = item.url;
+          if (item.type === 'video') { thumb.muted = true; thumb.playsInline = true; }
+
+          const name = document.createElement('div');
+          name.className = 'image-name';
+          name.title = item.fileName || item.name;
+          name.textContent = item.fileName || item.name;
+
+          const displayName = document.createElement('input');
+          displayName.type = 'text';
+          displayName.value = item.displayName || '';
+          displayName.placeholder = 'Alias Identifier Override';
+          displayName.addEventListener('input', () => {
+            item.displayName = displayName.value.trim();
+            item.name = item.displayName || item.fileName || item.name;
+            if (orderedSlides()[currentIndex]?.id === item.id) { showCurrent(); }
+          });
+
+          details.append(name, displayName);
+          row.append(makeDragHandle(), thumb, details);
+          row.append(makeRowActions(
+            item.type === 'video' ? 'Deploy Video' : 'Deploy Image', 'Show this file now',
+            item.type === 'video' ? 'play-video' : 'play-image',
+            () => forcePlaySelected(item.id, false),
+            makeRemoveButton('Purge Asset', () => {
+              URL.revokeObjectURL(item.url);
+              images = images.filter((image) => image.id !== item.id);
+              currentIndex = Math.min(currentIndex, Math.max(0, orderedSlides().length - 1));
+              if (!orderedSlides().length) stopTimer();
+              renderList(); showCurrent();
+              if (isAutoMode) resetAndStartTimer();
+            })
+          ));
+          attachHoverZoom(thumb, item);
+          attachHoverZoom(name, item);
+        }
+        imageList.appendChild(row);
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const rows = [...container.querySelectorAll('.image-row:not(.dragging)')];
+      return rows.reduce((closest, row) => {
+        const box = row.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) { return { offset, element: row }; }
+        return closest;
+      }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+
+    function saveDraggedOrder() {
+      const activeId = orderedSlides()[currentIndex]?.id;
+      const ids = [...imageList.querySelectorAll('.image-row')].map((row) => row.dataset.imageId);
+      applySlideOrder(ids);
+      currentIndex = Math.max(0, orderedSlides().findIndex((item) => item.id === activeId));
+      showCurrent();
+      if (isAutoMode) resetAndStartTimer();
+    }
+
+    function makeDragHandle() {
+      const handle = document.createElement('div');
+      handle.className = 'drag-handle'; handle.title = 'Drag to prioritize item order'; handle.innerHTML = '&#9776;';
+      return handle;
+    }
+
+    function makeRemoveButton(title, onClick) {
+      const remove = document.createElement('button');
+      remove.className = 'remove'; remove.type = 'button'; remove.title = title; remove.textContent = '×';
+      remove.addEventListener('click', onClick);
+      return remove;
+    }
+
+    function makeRowActions(playLabel, playTitle, playClass, onPlay, onRemove) {
+      const manualPlay = document.createElement('button');
+      manualPlay.className = `manual-play ${playClass}`; manualPlay.type = 'button'; manualPlay.title = playTitle; manualPlay.textContent = playLabel;
+      manualPlay.addEventListener('click', onPlay);
+      const rowActions = document.createElement('div');
+      rowActions.className = 'row-actions'; rowActions.append(manualPlay, onRemove);
+      return rowActions;
+    }
+
+    imageList.addEventListener('dragover', (event) => {
+      if (mediaSearchInput.value.trim()) return; // Lock structural changes if active filtering state engages
+      event.preventDefault();
+      const dragging = imageList.querySelector('.dragging');
+      if (!dragging) return;
+      const afterElement = getDragAfterElement(imageList, event.clientY);
+      if (afterElement) { imageList.insertBefore(dragging, afterElement); } else { imageList.appendChild(dragging); }
+    });
+
+    upload.addEventListener('change', () => {
+      ensureAudio();
+      const firstOrder = nextOrder();
+      const uploaded = [...upload.files].map((file, index) => ({
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${index}`,
+        name: file.name, fileName: file.name, displayName: '', order: firstOrder + index,
+        type: file.type.startsWith('video/') ? 'video' : 'image',
+        file, url: URL.createObjectURL(file)
+      }));
+
+      images.push(...uploaded); upload.value = ''; renderList(); showCurrent();
+      if (isAutoMode) resetAndStartTimer();
+    });
+
+    meetingTitleInput.addEventListener('input', () => {
+      const value = meetingTitleInput.value;
+      panelTitleDisplay.textContent = value || ' ';
+      localStorage.setItem('rbg_title', value);
+      if (projectorWindow && !projectorWindow.closed) {
+        const projectorTitle = projectorWindow.document.getElementById('draggableTitle');
+        if (projectorTitle) { projectorTitle.textContent = value || ' '; }
+      }
+    });
+
+    mediaSearchInput.addEventListener('input', renderList);
+
+    autoBtn.addEventListener('click', switchToAutoMode);
+    manualBtn.addEventListener('click', switchToManualMode);
+    videoSlide.addEventListener('ended', () => { if (isAutoMode) goNextFromTimer(); });
+    projectorBtn.addEventListener('click', openProjectorWindow);
+    addContactBtn.addEventListener('click', addContactSlide);
+    
+    saveFolderBtn.addEventListener('click', () => {
+      saveMediaFolder().catch((error) => { if (error.name !== 'AbortError') alert(`Compile aborted: ${error.message}`); });
+    });
+    loadFolderBtn.addEventListener('click', () => {
+      loadMediaFolder().catch((error) => { if (error.name !== 'AbortError') alert(`Ingestion aborted: ${error.message}`); });
+    });
+
+    animationBtn.addEventListener('click', () => { animationEnabled = !animationEnabled; updateAnimationButton(); });
+    soundBtn.addEventListener('click', () => { ensureAudio(); soundEnabled = !soundEnabled; updateSoundButton(); });
+    guestNameInput.addEventListener('input', updateAddContactButton);
+    guestMobileInput.addEventListener('input', updateAddContactButton);
+    
+    displaySecondsInput.addEventListener('change', () => {
+      displaySecondsInput.value = displaySeconds();
+      localStorage.setItem('rbg_seconds', displaySecondsInput.value);
+      if (isAutoMode) resetAndStartTimer();
+    });
+
+    nextBtn.addEventListener('click', () => { ensureAudio(); currentIndex += 1; showCurrent(); if (isAutoMode) resetAndStartTimer(); });
+    prevBtn.addEventListener('click', () => { ensureAudio(); currentIndex -= 1; showCurrent(); if (isAutoMode) resetAndStartTimer(); });
+
+    clearBtn.addEventListener('click', () => {
+      if(!confirm("Are you sure you want to clear the active presentation queue?")) return;
+      stopTimer();
+      images.forEach((image) => URL.revokeObjectURL(image.url));
+      images = []; contactSlides = []; currentIndex = 0; mediaSearchInput.value = '';
+      renderList(); showCurrent();
+    });
+
+    fullscreenBtn.addEventListener('click', async () => {
+      if (document.fullscreenElement) { await document.exitFullscreen(); } else { await app.requestFullscreen(); }
+    });
+
+    document.addEventListener('fullscreenchange', () => { app.classList.toggle('fullscreen', Boolean(document.fullscreenElement)); });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.type === 'search') return; 
+      if (event.key === ' ') { event.preventDefault(); isAutoMode ? switchToManualMode() : switchToAutoMode(); }
+      if (event.key === 'ArrowRight') nextBtn.click();
+      if (event.key === 'ArrowLeft') prevBtn.click();
+      if (event.key === 'Escape' && isAutoMode) switchToManualMode();
+    });
+
+    showCurrent();
+    updateAnimationButton();
+    updateSoundButton();
+    updateAddContactButton();
+  </script>
+
+
+
+
+<script>
+/* ================================================================
+   VASPIRE GUEST PRESENTATION — SUPABASE INTEGRATION
+   Uses only the publishable/anon key in browser code.
+   ================================================================ */
+(function () {
+  const SUPABASE_URL = 'https://zhufcryqamaubxjorjgm.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  window.VASPIRE_SUPABASE = supabaseClient;
+
+  let guestMeeting = null;
+  let guestRealtimeChannel = null;
+  let guestRows = [];
+  let remoteGuestItemId = null;
+  let activeRemotePresentationId = null;
+  let guestReturnState = null;
+  let guestPollTimer = null;
+  let lastKnownPlayingId = null;
+
+  const guestQrBtn = document.getElementById('guestQrBtn');
+  const guestUrlBtn = document.getElementById('guestUrlBtn');
+  const guestQrBox = document.getElementById('guestQrBox');
+  const guestQrCanvas = document.getElementById('guestQrCanvas');
+  const guestUrlText = document.getElementById('guestUrlText');
+  const guestMeetingStatus = document.getElementById('guestMeetingStatus');
+  const guestList = document.getElementById('guestList');
+  const guestLiveStatus = document.getElementById('guestLiveStatus');
+
+  function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[ch]));
+  }
+
+  function makeCode() {
+    return Math.random().toString(36).slice(2, 8).toUpperCase();
+  }
+
+  function guestPageUrl(meetingId) {
+    const url = new URL('guest.html', window.location.href);
+    url.searchParams.set('meeting', meetingId);
+    return url.href;
+  }
+
+  function setGuestStatus(message, isError = false) {
+    if (guestMeetingStatus) {
+      guestMeetingStatus.textContent = message || '';
+      guestMeetingStatus.style.color = isError ? '#ff8a8a' : '#9ca7b8';
+    }
+    if (guestLiveStatus) {
+      guestLiveStatus.textContent = message || '';
+      guestLiveStatus.style.color = isError ? '#ff8a8a' : '#20c997';
+    }
+  }
+
+  async function createMeeting() {
+    const title = (meetingTitleInput?.value || 'RBG Breakfast Meeting').trim() || 'RBG Breakfast Meeting';
+    const id = crypto.randomUUID();
+    const code = makeCode();
+
+    const { data, error } = await supabaseClient
+      .from('meetings')
+      .insert({ id, code, title, active: true })
+      .select('id,code,title,active,created_at')
+      .single();
+
+    if (error) {
+      console.error('Meeting creation failed:', error);
+      setGuestStatus('Meeting creation failed: ' + error.message, true);
+      throw error;
+    }
+
+    guestMeeting = data;
+    localStorage.setItem('vaspire_active_meeting_id', data.id);
+    await loadGuestRows();
+    subscribeToMeeting(data.id);
+    startGuestPolling();
+    updateGuestControls();
+    setGuestStatus('Meeting ' + (data.code || data.id.slice(0, 8)) + ' is live.');
+    return data;
+  }
+
+  async function loadExistingMeeting() {
+    const savedId = localStorage.getItem('vaspire_active_meeting_id');
+    if (!savedId) return null;
+
+    const { data, error } = await supabaseClient
+      .from('meetings')
+      .select('id,code,title,active,created_at')
+      .eq('id', savedId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Could not restore previous meeting:', error.message);
+      setGuestStatus('Previous meeting could not be restored: ' + error.message, true);
+      return null;
+    }
+    if (!data || data.active === false) {
+      localStorage.removeItem('vaspire_active_meeting_id');
+      return null;
+    }
+
+    guestMeeting = data;
+    await loadGuestRows();
+    subscribeToMeeting(data.id);
+    startGuestPolling();
+    updateGuestControls();
+    return data;
+  }
+
+  async function loadGuestRows(syncPlayback = true) {
+    if (!guestMeeting) return;
+    const { data, error } = await supabaseClient
+      .from('presentations')
+      .select('id,meeting_id,guest_id,file_name,file_url,status,created_at,played_at')
+      .eq('meeting_id', guestMeeting.id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Presentation load failed:', error);
+      setGuestStatus('Database read error: ' + error.message, true);
+      return;
+    }
+
+    const rows = data || [];
+    const guestIds = [...new Set(rows.map(r => r.guest_id).filter(Boolean))];
+    let guestsById = {};
+    if (guestIds.length) {
+      const result = await supabaseClient.from('guests').select('id,name,company').in('id', guestIds);
+      if (!result.error) guestsById = Object.fromEntries((result.data || []).map(g => [g.id, g]));
+    }
+
+    guestRows = rows.map(r => ({ ...r, guest: guestsById[r.guest_id] || {} }));
+    renderGuestList();
+
+    const playing = guestRows.find(r => r.status === 'playing');
+    if (syncPlayback) {
+      if (playing) {
+        if (lastKnownPlayingId !== playing.id || activeRemotePresentationId !== playing.id) {
+          lastKnownPlayingId = playing.id;
+          activeRemotePresentationId = playing.id;
+          displayRemoteGuest(playing);
+        }
+      } else if (activeRemotePresentationId) {
+        lastKnownPlayingId = null;
+        restoreAfterGuest();
+      }
+    }
+  }
+
+  function startGuestPolling() {
+    if (guestPollTimer) window.clearInterval(guestPollTimer);
+    guestPollTimer = window.setInterval(() => {
+      loadGuestRows(true).catch(err => console.warn('Guest monitor poll failed:', err));
+    }, 5000);
+  }
+
+  function renderGuestList() {
+    if (!guestList) return;
+    if (!guestMeeting) {
+      guestList.innerHTML = '<div style="color:#9ca7b8;font-size:11px">Create a guest meeting to begin.</div>';
+      return;
+    }
+    if (!guestRows.length) {
+      guestList.innerHTML = '<div style="color:#9ca7b8;font-size:11px">Waiting for guest uploads…</div>';
+      return;
+    }
+
+    guestList.innerHTML = '';
+    guestRows.forEach(row => {
+      const item = document.createElement('div');
+      item.className = 'guest-item';
+      const guest = row.guest || {};
+      const name = guest.name || 'Guest';
+      const company = guest.company || '';
+      item.innerHTML = `
+        <div>
+          <b>${esc(name)}</b>
+          <small>${esc(company)} · ${esc(row.file_name || 'Guest Slide')}</small>
+          <small style="color:${row.status === 'playing' ? '#20c997' : '#9ca7b8'}">Status: ${esc(row.status || 'uploaded')}</small>
+        </div>`;
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.textContent = row.status === 'playing' ? '● LIVE' : '▶ PLAY';
+      play.disabled = row.status === 'playing';
+      play.addEventListener('click', () => playGuestPresentation(row.id));
+      item.appendChild(play);
+      guestList.appendChild(item);
+    });
+  }
+
+  async function playGuestPresentation(presentationId) {
+    if (!guestMeeting) return;
+    const target = guestRows.find(r => r.id === presentationId);
+    if (!target) return;
+
+    const endOthers = await supabaseClient
+      .from('presentations')
+      .update({ status: 'ended' })
+      .eq('meeting_id', guestMeeting.id)
+      .eq('status', 'playing');
+
+    if (endOthers.error) {
+      alert('Unable to stop the current guest slide: ' + endOthers.error.message);
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from('presentations')
+      .update({ status: 'playing', played_at: new Date().toISOString() })
+      .eq('id', presentationId);
+
+    if (error) {
+      alert('Unable to start guest slide: ' + error.message);
+      return;
+    }
+
+    lastKnownPlayingId = presentationId;
+    await loadGuestRows(true);
+  }
+
+  async function endGuestPresentation(presentationId) {
+    const { error } = await supabaseClient
+      .from('presentations')
+      .update({ status: 'ended' })
+      .eq('id', presentationId);
+    if (error) {
+      console.error('End presentation failed:', error);
+      return;
+    }
+    lastKnownPlayingId = null;
+    await loadGuestRows(true);
+  }
+
+  function removeRemoteGuestSlide() {
+    if (!remoteGuestItemId) return;
+    images = images.filter(item => item.id !== remoteGuestItemId);
+    remoteGuestItemId = null;
+  }
+
+  function restoreAfterGuest() {
+    activeRemotePresentationId = null;
+    removeRemoteGuestSlide();
+    if (guestReturnState) {
+      currentIndex = Math.max(0, Math.min(guestReturnState.index, Math.max(0, orderedSlides().length - 1)));
+      isAutoMode = guestReturnState.auto;
+      guestReturnState = null;
+    }
+    renderList();
+    showCurrent();
+    if (isAutoMode) resetAndStartTimer();
+  }
+
+  function displayRemoteGuest(row) {
+    if (!row || !row.file_url) return;
+
+    const guest = row.guest || {};
+    const label = guest.name || 'Guest Presentation';
+
+    if (!guestReturnState) {
+      guestReturnState = { index: currentIndex, auto: isAutoMode };
+    }
+
+    stopTimer();
+    isAutoMode = false;
+    removeRemoteGuestSlide();
+
+    const id = 'remote-guest-' + row.id;
+    images.push({
+      id,
+      name: row.file_name || label,
+      fileName: row.file_name || 'Guest Slide',
+      displayName: label,
+      order: nextOrder(),
+      type: 'image',
+      url: row.file_url,
+      guest: true,
+      presentationId: row.id
+    });
+    remoteGuestItemId = id;
+    currentIndex = orderedSlides().findIndex(item => item.id === id);
+    renderList();
+    showCurrent();
+
+    if (statusText) statusText.textContent = `LIVE GUEST: ${label}`;
+  }
+
+  async function handlePresentationEvent(payload) {
+    const row = payload.new || payload.record;
+    if (!row || !guestMeeting || row.meeting_id !== guestMeeting.id) return;
+
+    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+      const guestResult = row.guest_id
+        ? await supabaseClient.from('guests').select('id,name,company').eq('id', row.guest_id).maybeSingle()
+        : { data: null };
+      const fullRow = { ...row, guest: guestResult.data || {} };
+
+      const index = guestRows.findIndex(r => r.id === row.id);
+      if (index >= 0) guestRows[index] = fullRow;
+      else guestRows.push(fullRow);
+      renderGuestList();
+
+      if (row.status === 'playing') {
+        lastKnownPlayingId = row.id;
+        activeRemotePresentationId = row.id;
+        displayRemoteGuest(fullRow);
+      }
+
+      if (row.status === 'ended' && row.id === activeRemotePresentationId) {
+        const stillPlaying = await supabaseClient
+          .from('presentations')
+          .select('id')
+          .eq('meeting_id', guestMeeting.id)
+          .eq('status', 'playing')
+          .limit(1);
+        if (!stillPlaying.error && !(stillPlaying.data || []).length) restoreAfterGuest();
+      }
+    }
+  }
+
+  function subscribeToMeeting(meetingId) {
+    if (guestRealtimeChannel) supabaseClient.removeChannel(guestRealtimeChannel);
+    guestRealtimeChannel = supabaseClient
+      .channel('vaspire-presentations-' + meetingId)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'presentations', filter: 'meeting_id=eq.' + meetingId },
+        handlePresentationEvent
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') setGuestStatus('Live guest monitor: Realtime connected');
+        else if (status === 'CHANNEL_ERROR') setGuestStatus('Live guest monitor: Realtime connection error — polling fallback active', true);
+        else if (status === 'TIMED_OUT') setGuestStatus('Live guest monitor: Realtime timed out — polling fallback active', true);
+      });
+  }
+
+  async function showGuestQr() {
+    if (!guestMeeting) {
+      try {
+        await createMeeting();
+      } catch (error) {
+        console.error(error);
+        alert('Could not create the guest meeting.\n\n' + error.message);
+        return;
+      }
+    }
+
+    const url = guestPageUrl(guestMeeting.id);
+    guestQrBox.hidden = false;
+    guestUrlText.textContent = url;
+    setGuestStatus('Meeting ' + (guestMeeting.code || guestMeeting.id.slice(0, 8)) + ' is live.');
+
+    if (window.QRCode && guestQrCanvas) {
+      await QRCode.toCanvas(guestQrCanvas, url, { width: 230, margin: 2 });
+    }
+  }
+
+  async function copyGuestLink() {
+    if (!guestMeeting) {
+      try { await createMeeting(); }
+      catch (error) { alert('Could not create the guest meeting.\n\n' + error.message); return; }
+    }
+    const url = guestPageUrl(guestMeeting.id);
+    try {
+      await navigator.clipboard.writeText(url);
+      setGuestStatus('Guest link copied.');
+    } catch (_) {
+      prompt('Copy guest link:', url);
+    }
+  }
+
+  async function initGuestBackend() {
+    renderGuestList();
+    if (guestLiveStatus) guestLiveStatus.textContent = 'Live guest monitor: starting…';
+    try {
+      await loadExistingMeeting();
+    } catch (error) {
+      console.warn('No previous meeting restored:', error);
+    }
+  }
+
+  function updateGuestControls() {
+    if (!guestMeeting) {
+      if (guestUrlText) guestUrlText.textContent = '';
+      return;
+    }
+    if (guestUrlText && !guestQrBox.hidden) guestUrlText.textContent = guestPageUrl(guestMeeting.id);
+  }
+
+  guestQrBtn?.addEventListener('click', showGuestQr);
+  guestUrlBtn?.addEventListener('click', copyGuestLink);
+
+  window.addEventListener('beforeunload', () => {
+    if (guestPollTimer) window.clearInterval(guestPollTimer);
+    if (guestRealtimeChannel) supabaseClient.removeChannel(guestRealtimeChannel);
+  });
+
+  // Expose a small API for the existing projector UI and for testing.
+  window.vaspireGuestPresentation = {
+    createMeeting,
+    showGuestQr,
+    playGuestPresentation,
+    endGuestPresentation,
+    getMeeting: () => guestMeeting,
+    getRows: () => [...guestRows]
+  };
+
+  initGuestBackend();
+})();
+</script>
+
+</body>
+</html>
