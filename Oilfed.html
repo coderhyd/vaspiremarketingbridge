@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="cache-control" content="no-cache">
+<title>TG OILFED Camera Diagnostic - v4.0-CAMERA-DIAGNOSTIC-2026-08-13</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17251d}
+.wrap{max-width:720px;margin:auto;padding:16px}
+.header{background:#0c4b2a;color:#fff;border-radius:18px;padding:20px;margin-bottom:16px}
+.header h1{margin:0 0 8px;font-size:23px}
+.version{display:inline-block;background:#fff;color:#0c4b2a;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 4px 18px #0001}
+label{display:block;font-weight:700;margin-bottom:7px}
+select,button{width:100%;padding:13px;border-radius:10px;font-size:16px}
+select{border:1px solid #cbd7cf;background:#fff}
+button{border:0;background:#0c8a4b;color:#fff;font-weight:700;margin-top:10px}
+button.secondary{background:#e7eee9;color:#16452d}
+button:disabled{opacity:.5}
+.status{padding:13px;border-radius:10px;background:#eef4ef;line-height:1.45;word-break:break-word}
+.status.ok{background:#e8f7ed;color:#126b36}
+.status.err{background:#fdecec;color:#9d1c1c}
+.status.info{background:#edf4ff;color:#1f4e8c}
+video{width:100%;display:block;background:#111;border-radius:14px;min-height:220px;object-fit:cover}
+pre{white-space:pre-wrap;word-break:break-word;background:#f5f7f6;border-radius:10px;padding:12px;font-size:13px}
+.small{font-size:13px;color:#607268;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="header">
+<h1>TG OILFED OIL PALM NURSERY</h1>
+<div>Camera Diagnostic</div>
+<div class="version">VERSION v4.0-CAMERA-DIAGNOSTIC-2026-08-13</div>
+</div>
+
+<div class="card">
+<div class="status info">
+This page tests the mobile camera only. It does not use Supabase and does not scan QR codes.
+<br><br>
+<strong>Expected result:</strong> after pressing Test Camera, you should see a live camera preview below.
+</div>
+</div>
+
+<div class="card">
+<label for="cameraSelect">Camera</label>
+<select id="cameraSelect">
+<option value="">Press Test Camera to detect cameras</option>
+</select>
+<button id="test">Test Camera</button>
+<button id="stop" class="secondary" disabled>Stop Camera</button>
+</div>
+
+<div class="card">
+<video id="video" autoplay playsinline muted></video>
+<div id="status" class="status" style="margin-top:12px">Ready. Press Test Camera.</div>
+</div>
+
+<div class="card">
+<h3 style="margin-top:0">Browser Diagnostics</h3>
+<pre id="diagnostics">Loading diagnostics...</pre>
+</div>
+
+<div class="card">
+<h3 style="margin-top:0">If the camera still does not open</h3>
+<div class="small">
+1. Make sure this page is opened as <b>HTTPS</b>, not a downloaded file.<br>
+2. In Chrome: Site settings → Camera → Allow.<br>
+3. Make sure another app is not using the camera.<br>
+4. Try Chrome rather than an in-app browser such as WhatsApp/Instagram browser.<br>
+5. Reload this page after changing the permission.
+</div>
+</div>
+
+<div class="small" style="text-align:center;padding:8px 0 20px">
+TG OILFED Farmer QR Assignment · v4.0-CAMERA-DIAGNOSTIC-2026-08-13
+</div>
+</div>
+
+<script>
+const VERSION="v4.0-CAMERA-DIAGNOSTIC-2026-08-13";
+let stream=null;
+
+const $=id=>document.getElementById(id);
+
+function diagnosticText(extra="") {
+  const lines=[
+    "VERSION: "+VERSION,
+    "URL: "+location.href,
+    "PROTOCOL: "+location.protocol,
+    "SECURE CONTEXT: "+window.isSecureContext,
+    "MEDIA DEVICES: "+(!!navigator.mediaDevices),
+    "GET USER MEDIA: "+(!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)),
+    "USER AGENT: "+navigator.userAgent
+  ];
+  if(extra) lines.push("",extra);
+  $("diagnostics").textContent=lines.join("\n");
+}
+
+function setStatus(text,type="") {
+  $("status").textContent=text;
+  $("status").className="status "+type;
+  diagnosticText(text);
+}
+
+async function listCameras() {
+  if(!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+    throw new Error("navigator.mediaDevices.enumerateDevices is not available.");
+  }
+
+  const devices=await navigator.mediaDevices.enumerateDevices();
+  const cams=devices.filter(d=>d.kind==="videoinput");
+  const select=$("cameraSelect");
+  select.innerHTML="";
+
+  if(!cams.length) {
+    select.innerHTML='<option value="">No camera detected</option>';
+    return [];
+  }
+
+  cams.forEach((cam,i)=>{
+    const o=document.createElement("option");
+    o.value=cam.deviceId;
+    o.textContent=cam.label || ("Camera "+(i+1));
+    select.appendChild(o);
+  });
+
+  const rear=cams.find(c=>/back|rear|environment|world/i.test(c.label||""));
+  select.value=rear ? rear.deviceId : cams[0].deviceId;
+  return cams;
+}
+
+async function stopCamera() {
+  if(stream) {
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+  }
+  $("video").srcObject=null;
+  $("stop").disabled=true;
+  $("test").disabled=false;
+}
+
+async function testCamera() {
+  await stopCamera();
+
+  $("test").disabled=true;
+  $("stop").disabled=false;
+  setStatus("Requesting camera permission...","info");
+
+  try {
+    if(location.protocol==="file:") {
+      throw new Error("This is a file:// page. Open the page from an HTTPS website.");
+    }
+
+    if(!window.isSecureContext && location.hostname!=="localhost" && location.hostname!=="127.0.0.1") {
+      throw new Error("This page is not a secure context. Use HTTPS.");
+    }
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Camera API is unavailable in this browser.");
+    }
+
+    // First request permission. This is intentionally done from the button click.
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}},
+      audio:false
+    });
+
+    $("video").srcObject=stream;
+    await $("video").play();
+
+    setStatus("Camera permission granted and live preview started.","ok");
+
+    // Once permission is granted, labels/device IDs are normally available.
+    await listCameras();
+
+  } catch(e) {
+    console.error(e);
+
+    let msg="Camera error: "+(e.message||e.name||"Unknown error");
+
+    if(e.name==="NotAllowedError") {
+      msg="Camera permission was denied or blocked. Open this site's browser permissions and set Camera to Allow, then reload.";
+    } else if(e.name==="NotFoundError") {
+      msg="No camera was found on this device.";
+    } else if(e.name==="NotReadableError") {
+      msg="The camera exists but cannot be opened. Another app/browser tab may be using it.";
+    } else if(e.name==="SecurityError") {
+      msg="The browser blocked camera access for security reasons. Verify HTTPS and site camera permission.";
+    } else if(e.name==="OverconstrainedError") {
+      msg="The requested camera configuration is unavailable. Try another camera.";
+    }
+
+    setStatus(msg,"err");
+    await stopCamera();
+  }
+}
+
+$("test").addEventListener("click",testCamera);
+$("stop").addEventListener("click",async()=>{
+  await stopCamera();
+  setStatus("Camera stopped.");
+});
+$("cameraSelect").addEventListener("change",async()=>{
+  if(!stream)return;
+  const id=$("cameraSelect").value;
+  if(!id)return;
+
+  try {
+    const old=stream;
+    stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:id}},audio:false});
+    old.getTracks().forEach(t=>t.stop());
+    $("video").srcObject=stream;
+    await $("video").play();
+    setStatus("Selected camera is now active.","ok");
+  } catch(e) {
+    setStatus("Could not switch camera: "+(e.message||e.name),"err");
+  }
+});
+
+diagnosticText("Page loaded successfully.");
+</script>
+</body>
+</html>
