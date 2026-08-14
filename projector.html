@@ -1,1391 +1,1176 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vaspire Projector Control</title>
-<style>
-:root{--bg:#06101c;--panel:#0d1b2a;--panel2:#102235;--line:#29455c;--text:#eef6fb;--muted:#91a7bb;--accent:#13b8a6;--danger:#ef5350}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#06101c,#0c1d2c);color:var(--text);font:14px Arial,sans-serif}
-.wrap{max-width:1500px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:23px;font-weight:800}.brand span{color:var(--accent)}
-.grid{display:grid;grid-template-columns:330px 1fr;gap:15px;margin-top:15px}.main{display:grid;grid-template-columns:1fr 390px;gap:15px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:15px}
-h3{margin:3px 0 12px}.row,.toolbar{display:flex;gap:7px;flex-wrap:wrap}button{border:0;border-radius:8px;padding:10px 13px;background:var(--accent);color:#031511;font-weight:800;cursor:pointer}button.secondary{background:#213a50;color:#fff}button.danger{background:var(--danger);color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
-.field{margin:9px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
-input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#071522;color:#fff}
-.status{padding:9px;border-radius:8px;background:#071522;color:var(--muted);margin:9px 0}.ok{color:#61e4ca}.bad{color:#ff9a96}
-.meetings,.list{max-height:380px;overflow:auto}.meeting{padding:9px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer}.meeting.active{border-color:var(--accent);background:#123042}
-.qr{background:#fff;padding:10px;width:max-content;margin:10px auto;border-radius:8px;min-height:20px}.url{font-size:11px;color:#9debe0;word-break:break-all}
-.preview{height:440px;background:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}.preview img,.preview video{max-width:100%;max-height:100%;object-fit:contain}.empty{color:#60778b;text-align:center}
-.item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--line)}.name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.small{font-size:11px;color:var(--muted)}
-.guest{display:grid;grid-template-columns:52px minmax(150px,1.15fr) minmax(150px,1.15fr) 125px 105px minmax(170px,1.3fr) 235px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);min-height:52px}.guest.head{color:var(--muted);font-size:11px;font-weight:800;min-height:34px;padding-top:5px;padding-bottom:5px}.guest>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.guest .small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;overflow:visible}.actions button{font-size:11px;padding:7px 9px;white-space:nowrap;min-width:auto}.guestListWrap{overflow-x:auto}.guestListWrap .guest{min-width:1050px}@media(max-width:1050px){.grid,.main{grid-template-columns:1fr}.preview{height:330px}.guest{grid-template-columns:45px 1.1fr 1.1fr 110px 90px 1.2fr 210px;min-width:980px}.guest.head{min-width:980px}.guestListWrap{overflow-x:auto}.actions{flex-wrap:nowrap}}
-.screen-mode{background:#000!important;width:100vw;height:100vh;overflow:hidden}.screen-mode .wrap{display:none}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+
+  <title>Vaspire Guest Slide Upload</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, #10283d 0%, transparent 40%),
+        #07111f;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 20px 14px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 30px;
+      background: #0d1b2a;
+      border: 1px solid #244056;
+      border-radius: 20px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.3);
+    }
+
+    .brand {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    .brand span {
+      color: #13b8a6;
+    }
+
+    .subtitle {
+      color: #91a7bb;
+      font-size: 17px;
+      margin-bottom: 25px;
+    }
+
+    .meeting-info {
+      padding: 16px 18px;
+      background: #071522;
+      border-radius: 12px;
+      color: #a8bdd0;
+      margin-bottom: 24px;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .f {
+      margin: 17px 0;
+    }
+
+    .f label {
+      display: block;
+      color: #a8bdd0;
+      font-size: 16px;
+      margin-bottom: 9px;
+      font-weight: 700;
+    }
+
+    .required {
+      color: #13b8a6;
+    }
+
+    .f input,
+    .f select {
+      width: 100%;
+      padding: 16px;
+      background: #071522;
+      border: 1px solid #294963;
+      border-radius: 11px;
+      color: #fff;
+      outline: none;
+      font-size: 17px;
+    }
+
+    .f input:focus,
+    .f select:focus {
+      border-color: #13b8a6;
+      box-shadow: 0 0 0 2px rgba(19,184,166,.12);
+    }
+
+    .f input[type="file"] {
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    .f input[type="file"]::file-selector-button {
+      padding: 10px 15px;
+      margin-right: 10px;
+      border: 1px solid #8ca0b5;
+      border-radius: 7px;
+      background: #f0f4fa;
+      color: #111;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .seat {
+      display: none;
+    }
+
+    .seat.visible {
+      display: block;
+    }
+
+    .hint {
+      color: #718ba1;
+      font-size: 13px;
+      margin-top: 7px;
+    }
+
+    button {
+      width: 100%;
+      padding: 17px;
+      border: 0;
+      border-radius: 11px;
+      background: #13b8a6;
+      color: #03100e;
+      font-size: 19px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: .15s;
+    }
+
+    button:hover:not(:disabled) {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      padding: 15px;
+      background: #071522;
+      border-radius: 11px;
+      margin-top: 16px;
+      color: #91a7bb;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .success {
+      color: #57e0c8;
+      border: 1px solid rgba(87,224,200,.18);
+    }
+
+    .error {
+      color: #ff8b8b;
+      border: 1px solid rgba(255,139,139,.18);
+    }
+
+    .loading {
+      color: #f5d98b;
+    }
+
+    .closed {
+      display: none;
+    }
+
+    .security-note {
+      margin-top: 18px;
+      color: #627b91;
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 20px;
+        border-radius: 15px;
+      }
+
+      .brand {
+        font-size: 27px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      .f input,
+      .f select {
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand">Vaspire <span>Projector Control</span></div>
-    <div class="row">
-      <button id="openPreviewScreen" class="secondary">Open Preview Screen</button>
-      <button id="openLiveScreen" class="secondary">Open Live Screen</button>
-      <button id="fullscreen" class="secondary">Fullscreen</button>
-    </div>
+
+<div class="card">
+
+  <div class="brand">
+    Vaspire <span>Guest Slide Upload</span>
   </div>
 
-  <div id="appStatus" class="status">Starting control panel…</div>
+  <div class="subtitle">
+    Submit your presentation slide for the meeting.
+  </div>
 
-  <div class="grid">
-    <aside>
-      <section class="panel">
-        <h3>Meeting Manager</h3>
-        <div class="field"><label>Meeting Name</label><input id="meetingName" placeholder="RBG Platinum Meet"></div>
-        <div class="field"><label>Meeting Date</label><input id="meetingDate" type="date"></div>
-        <label><input id="guestEnabled" type="checkbox" checked> Guest uploads enabled</label>
-        <label style="display:block;margin-top:10px">
-          <input id="seatRequired" type="checkbox" checked>
-          Seat Number Mandatory
-        </label>
-        <div class="small" style="margin-top:4px">
-          If disabled, guests will not be asked for a seat number.
-        </div>
-        <br><br><button id="createMeeting">Create Meeting</button>
+  <div id="meetingInfo" class="meeting-info">
+    Loading meeting...
+  </div>
 
-        <div class="field">
-          <label>View Meeting Media</label>
-          <select id="meetingSelect">
-            <option value="">Select a meeting</option>
-          </select>
-        </div>
+  <div id="closed" class="status closed"></div>
 
-        <div id="meetingStatus" class="status">No meeting selected.</div>
-        <div id="activeMeetingStatus" class="status">No active meeting.</div>
+  <form id="guestForm" novalidate>
 
-        <h3>Meetings</h3>
-        <div id="meetingList" class="meetings"></div>
-      </section>
+    <!-- NAME -->
+    <div class="f">
+      <label for="name">
+        Name <span class="required">*</span>
+      </label>
 
-      <section class="panel">
-        <h3>Guest Upload QR</h3>
-        <div id="uploadStatus" class="status">Select a meeting.</div>
-        <div id="qr" class="qr"></div>
-        <div id="guestUrl" class="url"></div>
-        <div class="row">
-          <button id="copyLink" class="secondary">Copy Link</button>
-          <button id="toggleUploads" class="secondary">Disable Uploads</button>
-        </div>
-      </section>
-    </aside>
+      <input
+        id="name"
+        type="text"
+        autocomplete="name"
+        maxlength="120"
+        placeholder="Enter your full name"
+        required
+      >
+    </div>
 
-    <main>
-      <div class="main">
-        <section class="panel">
-          <h3>Live Preview</h3>
-          <div class="toolbar">
-            <button id="stopLive" class="secondary">■ Stop Live</button>
-            <button id="clearPreview" class="secondary">Clear</button>
-          </div>
-          <div id="preview" class="preview"><div class="empty">No slide selected</div></div>
-        </section>
 
-        <section class="panel">
-          <h3>Local Media Upload</h3>
+    <!-- COMPANY -->
+    <div class="f">
+      <label for="company">
+        Company Name <span class="required">*</span>
+      </label>
 
-          <div id="activeUploadMeeting" class="status">No active meeting. Local upload is disabled.</div>
+      <input
+        id="company"
+        type="text"
+        autocomplete="organization"
+        maxlength="160"
+        placeholder="Enter company name"
+        required
+      >
+    </div>
 
-          <div class="field">
-            <label>Member Type</label>
-            <select id="operatorMemberType">
-              <option value="Paid Member">Paid Member</option>
-              <option value="Visitor">Visitor</option>
-            </select>
-          </div>
 
-          <div class="field" id="operatorSeatField">
-            <label>Seat Number</label>
-            <input id="operatorSeatNumber" type="text" inputmode="numeric" placeholder="Enter seat number">
-          </div>
+    <!-- MEMBER TYPE -->
+    <div class="f">
+      <label for="memberType">
+        Member Type <span class="required">*</span>
+      </label>
 
-          <input id="operatorFiles" type="file" multiple accept="image/*,video/*">
-          <br><br>
-          <button id="uploadOperatorMedia">Upload Selected Media</button>
-          <div id="operatorUploadStatus" class="status">Select media to upload.</div>
-          <div id="operatorMedia" class="list"></div>
-          <hr style="border-color:#29455c">
-          <h3>Manual Name Slide</h3>
-          <div class="field"><label>Name</label><input id="nameSlideName"></div>
-          <div class="field"><label>Company / Designation</label><input id="nameSlideCompany"></div>
-          <div class="field"><label>Mobile Number</label><input id="nameSlideMobile" type="tel" inputmode="numeric" maxlength="15" placeholder="Enter mobile number"></div>
-          <button id="createNameSlide" type="button">Create Local Slide</button>
-        </section>
+      <select id="memberType" required>
+        <option value="Paid Member">Paid Member</option>
+        <option value="Visitor">Visitor</option>
+      </select>
+    </div>
+
+
+    <!-- SEAT NUMBER -->
+    <div class="f seat" id="seatBox">
+
+      <label for="seatNumber">
+        Seat Number <span class="required">*</span>
+      </label>
+
+      <input
+        id="seatNumber"
+        type="text"
+        inputmode="numeric"
+        pattern="[0-9]+"
+        maxlength="10"
+        placeholder="Enter seat number"
+      >
+
+      <div class="hint">
+        Seat number is required for Paid Members when enabled for this meeting.
       </div>
 
-      <section class="panel">
-        <h3>Guest Presentations <span id="guestCount" class="small"></span></h3>
-         <input id="localVideoFile" type="file" accept="video/*" style="display:none">
+    </div>
 
-         <div class="field"><input id="guestSearch" type="search" placeholder="Search guest presentations by name, company, seat or slide..."></div>
-        <div class="guestListWrap">
-          <div class="guest head"><div>Seat</div><div>Name</div><div>Company</div><div>Mobile</div><div>Type</div><div>Slide</div><div>Actions</div></div>
-          <div id="guestList" class="list"></div>
-        </div>
-      </section>
 
-      <section class="panel">
-        <h3>Local Playlist / Project Folder</h3>
-        <div class="toolbar">
-          <input id="folderFiles" type="file" webkitdirectory directory multiple>
-          <button id="loadFolder" class="secondary">Load Project Folder</button>
-          <button id="previous" class="secondary">Previous</button>
-          <button id="next" class="secondary">Next</button>
-          <button id="autoLoop" class="secondary">Auto Loop: OFF</button>
-        </div>
-        <div id="playlist" class="list"></div>
-      </section>
-    </main>
+    <!-- SLIDE -->
+    <div class="f">
+
+      <label for="slideFile">
+        Slide <span class="required">*</span>
+      </label>
+
+      <input
+        id="slideFile"
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+        required
+      >
+
+      <div class="hint">
+        Accepted: JPG, PNG, WEBP or PDF.
+      </div>
+
+    </div>
+
+
+    <!-- UPLOAD -->
+    <button id="uploadButton" type="submit">
+      ↑ Upload My Slide
+    </button>
+
+
+    <!-- STATUS -->
+    <div id="status" class="status">
+      Ready.
+    </div>
+
+  </form>
+
+  <div class="security-note">
+    Your presentation will be submitted to the meeting operator for review.
   </div>
+
 </div>
 
+
 <script>
-(function(){
-'use strict';
+"use strict";
 
-/* =========================
-   LOCAL PROJECTOR CORE
-   This section never depends on Supabase.
-   ========================= */
-var screen2 = null;
-var localPlaylist = [];
-var playlistIndex = -1;
-var autoLoop = false;
-var meeting = null;
-var mediaRows = [];
-  var guestRows = [];
 
-function $(id){ return document.getElementById(id); }
+/* =========================================================
+   SUPABASE CONFIGURATION
+   ========================================================= */
 
-function setStatus(el, text, good){
-  if(!el) return;
-  el.textContent = text;
-  el.className = 'status ' + (good === true ? 'ok' : good === false ? 'bad' : '');
-}
+const SUPABASE_URL =
+  "https://zhufcryqamaubxjorjgm.supabase.co";
 
-function escapeHtml(value){
-  return String(value == null ? '' : value).replace(/[&<>"']/g,function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];
-  });
-}
+const SUPABASE_KEY =
+  "sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN";
 
-function mediaType(name){
-  return /\.(mp4|webm|ogg|mov|m4v)$/i.test(name) ? 'video' : 'image';
-}
 
-var lastScreenData = null;
-var screenChannel = null;
-var isScreenMode = new URLSearchParams(window.location.search).get('screen') === '2';
+const db = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-function renderProjectorDocument(doc,data){
-  if(!doc)return;
 
-  var body=doc.body;
-  if(!body){
-    try{
-      doc.open();
-      doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Vaspire Projector</title></head><body></body></html>');
-      doc.close();
-      body=doc.body;
-    }catch(e){return;}
-  }
-  if(!body)return;
+/* =========================================================
+   GET MEETING ID FROM URL
+   Example:
 
-  body.innerHTML='';
-  body.style.cssText='margin:0;background:#000;width:100vw;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center';
+   guest.html?meeting=UUID
+   ========================================================= */
 
-  if(!data || data.type==='CLEAR'){
-    var wait=doc.createElement('div');
-    wait.textContent='Vaspire Projector — NOW PLAYING';
-    wait.style.cssText='color:#fff;font:24px Arial;text-align:center';
-    body.appendChild(wait);
-    return;
-  }
+const params = new URLSearchParams(
+  window.location.search
+);
 
-  if(data.mediaType==='video'){
-    var video=doc.createElement('video');
-    video.src=data.url;
-    video.autoplay=true;
-    video.controls=false;
-    video.playsInline=true;
-    video.muted=false;
-    video.style.cssText='width:100vw;height:100vh;object-fit:contain;background:#000';
-    body.appendChild(video);
-    var promise=video.play();
-    if(promise && promise.catch)promise.catch(function(){
-      video.muted=true;
-      video.play().catch(function(){});
-    });
-  }else{
-    var img=doc.createElement('img');
-    img.src=data.url;
-    img.alt=data.title||'';
-    img.style.cssText='width:100vw;height:100vh;object-fit:contain;background:#000';
-    img.onerror=function(){
-      body.innerHTML='';
-      var err=doc.createElement('div');
-      err.textContent='Unable to load projector image';
-      err.style.cssText='color:#fff;font:24px Arial;text-align:center';
-      body.appendChild(err);
-    };
-    body.appendChild(img);
-  }
-}
+const meetingId = params.get("meeting");
 
-function saveScreenState(data){
-  try{
-    if(data && data.type==='PLAY'){
-      localStorage.setItem('vaspire_projector_state',JSON.stringify(data));
-      lastScreenData=data;
-    }else{
-      localStorage.removeItem('vaspire_projector_state');
-      lastScreenData=null;
-    }
-  }catch(e){}
-}
 
-function broadcastScreen(data){
-  saveScreenState(data);
+/* =========================================================
+   DOM
+   ========================================================= */
 
-  if(screenChannel){
-    try{screenChannel.postMessage(data);}catch(e){}
-  }
+const form =
+  document.getElementById("guestForm");
 
-  /* Keep legacy direct popup support as a fallback. */
-  if(screen2 && !screen2.closed && !isScreenMode){
-    try{
-      if(screen2.location.href.indexOf('?screen=2')<0){
-        var u=new URL(window.location.href);
-        u.search='';
-        u.hash='';
-        u.searchParams.set('screen','2');
-        screen2.location.href=u.href;
-      }
-    }catch(e){}
-  }
-}
+const nameInput =
+  document.getElementById("name");
 
-function renderScreen2(data){
-  broadcastScreen(data);
-}
+const companyInput =
+  document.getElementById("company");
 
-function showLocal(url,type,title){
-  var box=$('preview');
-  if(!box)return;
+const memberTypeInput =
+  document.getElementById("memberType");
 
-  box.innerHTML='';
-  var data={type:'PREVIEW',url:url,mediaType:type,title:title||''};
+const seatBox =
+  document.getElementById("seatBox");
 
-  if(type==='video'){
-    var v=document.createElement('video');
-    v.src=url;
-    v.controls=true;
-    v.autoplay=true;
-    v.playsInline=true;
-    box.appendChild(v);
-  }else{
-    var img=document.createElement('img');
-    img.src=url;
-    img.alt=title||'';
-    box.appendChild(img);
-  }
+const seatInput =
+  document.getElementById("seatNumber");
 
-  lastPreviewData=data;
-  broadcastPreview(data);
+const fileInput =
+  document.getElementById("slideFile");
+
+const uploadButton =
+  document.getElementById("uploadButton");
+
+const statusBox =
+  document.getElementById("status");
+
+const meetingInfo =
+  document.getElementById("meetingInfo");
+
+const closedBox =
+  document.getElementById("closed");
+
+
+let meetingSeatRequired = true;
+let currentMeeting = null;
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function setStatus(message, type = "") {
+
+  statusBox.textContent = message;
+
+  statusBox.className =
+    "status" +
+    (type ? " " + type : "");
 }
 
 
-function playNow(url,type,title){
-  /*
-   * PLAY affects the Live Now Playing window only.
-   * The Preview window remains independent.
-   */
-  var data={type:'PLAY',url:url,mediaType:type,title:title||''};
-  lastScreenData=data;
-  broadcastLive(data);
+function showClosed(message) {
+
+  form.style.display = "none";
+
+  closedBox.style.display = "block";
+
+  closedBox.className =
+    "status error";
+
+  closedBox.textContent = message;
 }
 
 
-function clearLocal(){
-  $('preview').innerHTML='<div class="empty">No slide selected</div>';
-  var data={type:'CLEAR'};
-  lastPreviewData=data;
-  broadcastPreview(data);
-}
+/* =========================================================
+   SEAT FIELD
+   ========================================================= */
 
+function updateSeatField() {
 
-function openScreenWindow(kind){
-  var isPreview=kind==='preview';
-  var target=isPreview?'previewWindow':'liveWindow';
-  var title=isPreview?'Vaspire Preview Screen':'Vaspire Live Now Playing';
+  const isPaid =
+    memberTypeInput.value === "Paid Member";
 
-  var existing=window[target];
-  if(existing && !existing.closed){
-    existing.focus();
-    return existing;
-  }
+  const showSeat =
+    isPaid && meetingSeatRequired;
 
-  var w=window.open('', isPreview?'vaspire_preview_screen':'vaspire_live_screen',
-    'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no');
+  if (showSeat) {
 
-  if(!w){
-    alert('Popup blocked. Please allow popups for vaspiremarketingbridge.com.');
-    return null;
-  }
+    seatBox.classList.add("visible");
 
-  w.document.open();
-  w.document.write(`<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>${title}</title>
-<style>
-html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
-body{display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif}
-#stage{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#000}
-#stage img,#stage video{width:100%;height:100%;object-fit:contain}
-#empty{color:#62788a;font-size:28px;letter-spacing:.5px}
-#label{position:fixed;left:18px;top:15px;padding:7px 12px;border-radius:6px;
-background:rgba(0,0,0,.62);color:#fff;font:700 14px Arial;z-index:5}
-</style>
-</head>
-<body>
-<div id="stage"><div id="empty">${isPreview?'PREVIEW SCREEN':'NOW PLAYING'}</div></div>
-<div id="label">${isPreview?'PREVIEW':'NOW PLAYING'}</div>
-<script>
-(function(){
-  var mode=${JSON.stringify(isPreview?'preview':'live')};
-  var channel=('BroadcastChannel' in window)?new BroadcastChannel('vaspire_projector_'+mode):null;
-  var stage=document.getElementById('stage');
+    seatInput.required = true;
 
-  function render(data){
-    if(!data || data.type==='CLEAR'){
-      stage.innerHTML='<div id="empty">'+(mode==='preview'?'PREVIEW SCREEN':'NOW PLAYING')+'</div>';
-      return;
-    }
-    if(data.type!==(mode==='preview'?'PREVIEW':'PLAY')) return;
+  } else {
 
-    stage.innerHTML='';
-    if(data.mediaType==='video'){
-      var v=document.createElement('video');
-      v.src=data.url;
-      v.autoplay=true;
-      v.controls=false;
-      v.playsInline=true;
-      v.muted=false;
-      stage.appendChild(v);
-      var p=v.play();
-      if(p) p.catch(function(){v.muted=true;v.play().catch(function(){});});
-    }else{
-      var img=document.createElement('img');
-      img.src=data.url;
-      img.alt=data.title||'';
-      stage.appendChild(img);
-    }
-  }
+    seatBox.classList.remove("visible");
 
-  if(channel) channel.onmessage=function(e){render(e.data)};
-  window.addEventListener('storage',function(e){
-    if(e.key==='vaspire_'+mode+'_screen_data' && e.newValue){
-      try{render(JSON.parse(e.newValue));}catch(err){}
-    }
-  });
+    seatInput.required = false;
 
-  // Ask opener for the current state after this window opens.
-  if(window.opener && window.opener.postMessage){
-    window.opener.postMessage({type:'REQUEST_SCREEN_STATE',mode:mode},'*');
-  }
-
-  window.addEventListener('message',function(e){
-    if(e.data && e.data.type==='SCREEN_STATE' && e.data.mode===mode) render(e.data.data);
-  });
-})();
-<\/script>
-</body>
-</html>`);
-  w.document.close();
-  w.focus();
-  window[target]=w;
-  return w;
-}
-
-function broadcastToScreen(mode,data){
-  var channelName='vaspire_projector_'+mode;
-  if('BroadcastChannel' in window){
-    try{
-      var bc=new BroadcastChannel(channelName);
-      bc.postMessage(data);
-      bc.close();
-    }catch(e){}
-  }
-  try{
-    localStorage.setItem('vaspire_'+mode+'_screen_data',JSON.stringify(data));
-  }catch(e){}
-
-  var w=mode==='preview'?previewWindow:liveWindow;
-  if(w && !w.closed){
-    try{w.postMessage({type:'SCREEN_STATE',mode:mode,data:data},'*');}catch(e){}
+    seatInput.value = "";
   }
 }
 
-function broadcastPreview(data){
-  broadcastToScreen('preview',data);
+
+memberTypeInput.addEventListener(
+  "change",
+  updateSeatField
+);
+
+
+/* =========================================================
+   FILE NAME
+   ========================================================= */
+
+function safeFileName(name) {
+
+  const extMatch =
+    name.match(/\.([a-zA-Z0-9]+)$/);
+
+  const ext =
+    extMatch
+      ? "." + extMatch[1].toLowerCase()
+      : "";
+
+  const base =
+    name
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/_+/g, "_")
+      .slice(0, 100);
+
+  return (base || "slide") + ext;
 }
 
-function broadcastLive(data){
-  broadcastToScreen('live',data);
-}
 
-window.addEventListener('message',function(e){
-  if(!e.data || e.data.type!=='REQUEST_SCREEN_STATE')return;
+/* =========================================================
+   VALIDATE
+   ========================================================= */
 
-  var mode=e.data.mode;
-  var data=mode==='preview'?lastPreviewData:lastScreenData;
+function validateForm() {
 
-  try{
-    e.source.postMessage({type:'SCREEN_STATE',mode:mode,data:data},'*');
-  }catch(err){}
-});
+  const name =
+    nameInput.value.trim();
 
-function openPreviewScreen(){
-  return openScreenWindow('preview');
-}
+  const company =
+    companyInput.value.trim();
 
-function openLiveScreen(){
-  return openScreenWindow('live');
-}
+  const memberType =
+    memberTypeInput.value;
+
+  const seat =
+    seatInput.value.trim();
+
+  const file =
+    fileInput.files[0];
 
 
-function sendToScreen2(data){
-  broadcastScreen(data);
-}
+  if (!name) {
 
-function initScreenMode(){
-  if(!isScreenMode)return;
+    alert("Please enter your name.");
 
-  document.body.classList.add('screen-mode');
-  screenChannel=new BroadcastChannel('vaspire-projector-screen');
+    nameInput.focus();
 
-  screenChannel.onmessage=function(e){
-    if(e.data && e.data.type==='PLAY'){
-      lastScreenData=e.data;
-      renderProjectorDocument(document,e.data);
-    }else if(e.data && e.data.type==='CLEAR'){
-      lastScreenData=null;
-      renderProjectorDocument(document,{type:'CLEAR'});
-    }
-  };
-
-  window.addEventListener('storage',function(e){
-    if(e.key!=='vaspire_projector_state')return;
-    if(!e.newValue){
-      renderProjectorDocument(document,{type:'CLEAR'});
-      return;
-    }
-    try{
-      var data=JSON.parse(e.newValue);
-      lastScreenData=data;
-      renderProjectorDocument(document,data);
-    }catch(err){}
-  });
-
-  var saved=null;
-  try{saved=JSON.parse(localStorage.getItem('vaspire_projector_state')||'null');}catch(e){}
-
-  if(saved && saved.type==='PLAY'){
-    lastScreenData=saved;
-    renderProjectorDocument(document,saved);
-  }else{
-    renderProjectorDocument(document,{type:'CLEAR'});
-  }
-}
-
-function loadLocalFolder(){
-  var files=Array.prototype.slice.call($('folderFiles').files || []);
-  localPlaylist=files.filter(function(f){
-    return f.type.indexOf('image/')===0 || f.type.indexOf('video/')===0;
-  });
-  playlistIndex=-1;
-  renderPlaylist();
-}
-
-function renderPlaylist(){
-  var box=$('playlist');
-  if(!localPlaylist.length){
-    box.innerHTML='<div class="small">No local files loaded.</div>';
-    return;
-  }
-  box.innerHTML=localPlaylist.map(function(f,i){
-    return '<div class="item"><span class="name">'+(i+1)+'. '+escapeHtml(f.name)+'</span><button class="secondary" data-local-index="'+i+'">Play</button></div>';
-  }).join('');
-  Array.prototype.forEach.call(box.querySelectorAll('[data-local-index]'),function(btn){
-    btn.addEventListener('click',function(){
-      playLocal(Number(btn.getAttribute('data-local-index')));
-    });
-  });
-}
-
-function playLocal(i){
-  if(!localPlaylist.length) return;
-  if(i<0) i=localPlaylist.length-1;
-  if(i>=localPlaylist.length) i=0;
-  playlistIndex=i;
-  var f=localPlaylist[i];
-  playNow(URL.createObjectURL(f), f.type.indexOf('video/')===0?'video':'image', f.name);
-}
-
-async function createLocalNameSlide(){
-  if(!db){
-    alert('Supabase is not connected.');
-    return;
-  }
-  if(!meeting){
-    alert('Select a meeting first.');
-    return;
+    return false;
   }
 
-  var n=$('nameSlideName').value.trim();
-  var c=$('nameSlideCompany').value.trim();
-  var mobile=$('nameSlideMobile').value.trim();
 
-  if(!n){
-    alert('Enter the name.');
-    $('nameSlideName').focus();
-    return;
-  }
-  if(!mobile){
-    alert('Enter the mobile number.');
-    $('nameSlideMobile').focus();
-    return;
-  }
-  if(!/^[0-9+()\-\s]{7,15}$/.test(mobile)){
-    alert('Enter a valid mobile number.');
-    $('nameSlideMobile').focus();
-    return;
+  if (!company) {
+
+    alert("Please enter your company name.");
+
+    companyInput.focus();
+
+    return false;
   }
 
-  var btn=$('createNameSlide');
-  btn.disabled=true;
-  btn.textContent='Creating Slide…';
-  setStatus($('operatorUploadStatus'),'Creating local guest slide…',undefined);
 
-  var guestId=null;
-  var storagePath=null;
+  if (
+    memberType === "Paid Member" &&
+    meetingSeatRequired
+  ) {
 
-  try{
-    /* Create a clean 16:9 slide. */
-    var safeName=escapeHtml(n);
-    var safeCompany=escapeHtml(c);
-    var safeMobile=escapeHtml(mobile);
-    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080">'
-      +'<rect width="1920" height="1080" fill="#07111f"/>'
-      +'<text x="960" y="410" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="82" font-weight="700">'+safeName+'</text>'
-      +(c?'<text x="960" y="515" text-anchor="middle" fill="#13b8a6" font-family="Arial,sans-serif" font-size="44">'+safeCompany+'</text>':'')
-      +'<text x="960" y="610" text-anchor="middle" fill="#9debe0" font-family="Arial,sans-serif" font-size="38">'+safeMobile+'</text>'
-      +'</svg>';
+    if (!seat) {
 
-    /* First create the guest record so the presentation is linked to it. */
-    var gi=await db.from('guests').insert({
-      meeting_id:meeting.id,
-      name:n,
-      company_name:c,
-      member_type:'Visitor',
-      seat_number:null
-    }).select('*').single();
+      alert(
+        "Seat Number is required for Paid Members."
+      );
 
-    if(gi.error) throw new Error('Guest record: '+gi.error.message);
-    guestId=gi.data.id;
+      seatInput.focus();
 
-    /* Save mobile if the existing guests table has a compatible column. */
-    var mobileColumn=null;
-    ['mobile_number','mobile','phone','phone_number'].some(function(k){
-      if(Object.prototype.hasOwnProperty.call(gi.data,k)){mobileColumn=k;return true;}
       return false;
-    });
-    if(mobileColumn){
-      var mu={}; mu[mobileColumn]=mobile;
-      var mr=await db.from('guests').update(mu).eq('id',guestId);
-      if(mr.error) console.warn('Could not save mobile number:',mr.error.message);
     }
 
-    /*
-     * Convert the SVG to PNG before uploading.
-     * Supabase Storage in this project rejects image/svg+xml, so the
-     * browser renders the SVG onto a canvas and uploads a normal PNG.
-     */
-    var pngBlob=await new Promise(function(resolve,reject){
-      var img=new Image();
-      img.onload=function(){
-        try{
-          var canvas=document.createElement('canvas');
-          canvas.width=1920;
-          canvas.height=1080;
-          var ctx=canvas.getContext('2d');
-          ctx.drawImage(img,0,0,1920,1080);
-          canvas.toBlob(function(blob){
-            if(blob) resolve(blob);
-            else reject(new Error('Could not convert slide to PNG.'));
-          },'image/png');
-        }catch(e){reject(e);}
-      };
-      img.onerror=function(){reject(new Error('Could not render the local slide.'));};
-      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-    });
 
-    storagePath=meeting.id+'/local-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.png';
-    var up=await db.storage.from('guest-slides').upload(storagePath,pngBlob,{contentType:'image/png',upsert:false});
-    if(up.error) throw new Error('Slide upload: '+up.error.message);
+    if (!/^[0-9]+$/.test(seat)) {
 
-    var pub=db.storage.from('guest-slides').getPublicUrl(storagePath).data.publicUrl;
-    var fileName=n.replace(/[^a-zA-Z0-9._-]/g,'_')+' - Local Slide.png';
+      alert(
+        "Seat Number must contain numbers only."
+      );
 
-    /* This is the critical insert: guest_id links it into Guest Presentations. */
-    var pi=await db.from('presentations').insert({
-      meeting_id:meeting.id,
-      guest_id:guestId,
-      file_name:fileName,
-      file_url:pub,
-      status:'ready'
-    }).select('*').single();
+      seatInput.focus();
 
-    if(pi.error) throw new Error('Presentation record: '+pi.error.message);
-
-    /* Immediately show it locally and refresh the Guest Presentations list. */
-    showLocal(pub,'image',fileName);
-    await loadGuests();
-
-    $('nameSlideName').value='';
-    $('nameSlideCompany').value='';
-    $('nameSlideMobile').value='';
-
-    setStatus($('operatorUploadStatus'),'Local guest slide created and added to Guest Presentations.',true);
-  }catch(err){
-    console.error('Create Local Slide:',err);
-    if(storagePath){
-      try{await db.storage.from('guest-slides').remove([storagePath]);}catch(e){}
+      return false;
     }
-    if(guestId){
-      try{await db.from('guests').delete().eq('id',guestId);}catch(e){}
+
+
+    const seatNumber =
+      Number(seat);
+
+    if (
+      !Number.isInteger(seatNumber) ||
+      seatNumber < 1
+    ) {
+
+      alert(
+        "Please enter a valid Seat Number."
+      );
+
+      seatInput.focus();
+
+      return false;
     }
-    setStatus($('operatorUploadStatus'),'Could not create local slide: '+(err.message||err),false);
-    alert('Could not create local slide.\n\n'+(err.message||err));
-  }finally{
-    btn.disabled=false;
-    btn.textContent='Create Local Slide';
   }
-}
 
-function initLocal(){
-  $('fullscreen').addEventListener('click',function(){
-    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-  });
-  $('clearPreview').addEventListener('click',clearLocal);
-  $('stopLive').addEventListener('click',clearLocal);
-  $('loadFolder').addEventListener('click',loadLocalFolder);
-  $('previous').addEventListener('click',function(){
-    if(localPlaylist.length) playLocal(playlistIndex-1);
-  });
-  $('next').addEventListener('click',function(){
-    if(localPlaylist.length) playLocal(playlistIndex+1);
-  });
-  $('autoLoop').addEventListener('click',function(){
-    autoLoop=!autoLoop;
-    $('autoLoop').textContent='Auto Loop: '+(autoLoop?'ON':'OFF');
-  });
-  $('createNameSlide').addEventListener('click',createLocalNameSlide);
-  $('folderFiles').addEventListener('change',function(){
-    if($('folderFiles').files.length) loadLocalFolder();
-  });
-  setStatus($('appStatus'),'Local projector controls ready. Connecting to Supabase…',true);
-}
 
-/* =========================
-   SUPABASE MODULE
-   Loaded dynamically so local buttons work even if CDN fails.
-   ========================= */
-var db=null;
-var realtimeChannel=null;
-  var guestPollTimer=null;
-  var localVideoTarget=null;
-  var previewWindow=null;
-  var liveWindow=null;
-  var localVideoObjectUrl=null;
-  var SELECTED_MEETING_KEY='vaspire_selected_meeting_id';
+  if (!file) {
 
-var SUPABASE_URL='https://zhufcryqamaubxjorjgm.supabase.co';
-var SUPABASE_KEY='sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN';
+    alert("Please select your slide.");
 
-function loadSupabase(){
-  if(window.supabase && window.supabase.createClient){
-    startSupabase();
-    return;
+    fileInput.focus();
+
+    return false;
   }
-  var s=document.createElement('script');
-  s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  s.onload=function(){ startSupabase(); };
-  s.onerror=function(){
-    setStatus($('appStatus'),'Supabase library could not load. Local projector functions are still available.',false);
-  };
-  document.head.appendChild(s);
-}
 
-async function startSupabase(){
-  try{
-    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-    var test=await db.from('meetings').select('id',{count:'exact',head:true});
-    if(test.error) throw test.error;
-    setStatus($('appStatus'),'Supabase connected. All meeting controls are ready.',true);
-    bindSupabaseButtons();
-    await loadMeetings();
-  }catch(err){
-    console.error('Supabase:',err);
-    setStatus($('appStatus'),'Supabase connection/table error: '+(err.message||err)+'. Local projector functions remain active.',false);
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf"
+  ];
+
+
+  const extension =
+    file.name
+      .split(".")
+      .pop()
+      .toLowerCase();
+
+
+  const allowedExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "pdf"
+  ];
+
+
+  if (
+    !allowedTypes.includes(file.type) &&
+    !allowedExtensions.includes(extension)
+  ) {
+
+    alert(
+      "Only JPG, PNG, WEBP or PDF files are allowed."
+    );
+
+    return false;
   }
+
+
+  /* 50 MB limit */
+
+  const maxSize =
+    50 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+
+    alert(
+      "File is too large. Maximum size is 50 MB."
+    );
+
+    return false;
+  }
+
+
+  return true;
 }
 
-function bindSupabaseButtons(){
-  if($('createMeeting')) $('createMeeting').addEventListener('click',createMeeting);
-  if($('copyLink')) $('copyLink').addEventListener('click',copyGuestLink);
-  if($('toggleUploads')) $('toggleUploads').addEventListener('click',toggleGuestUploads);
-  if($('uploadOperatorMedia')) $('uploadOperatorMedia').addEventListener('click',uploadOperatorMedia);
-  if($('operatorMemberType')) if($('operatorMemberType')) $('operatorMemberType').addEventListener('change',updateOperatorSeatField);
-  if($('meetingSelect')) $('meetingSelect').addEventListener('change',function(){
-    var id=this.value;
-    if(id) selectMeeting(id);
-  });
-  updateOperatorSeatField();
-  if($('guestSearch')) $('guestSearch').addEventListener('input',renderGuestList);
 
-  if($('localVideoFile')) $('localVideoFile').addEventListener('change',function(){
-    var file=this.files && this.files[0];
-    if(file) playSelectedLocalVideo(file);
-  });
-  var previewBtn=$('openPreviewScreen');
-  if(previewBtn) previewBtn.addEventListener('click',openPreviewScreen);
+/* =========================================================
+   LOAD MEETING
+   ========================================================= */
 
-  var liveBtn=$('openLiveScreen');
-  if(liveBtn) liveBtn.addEventListener('click',openLiveScreen);
+async function loadMeeting() {
 
-}
+  if (!meetingId) {
 
-/* Existing meetings schema uses `title`, not `name`.
-   Columns: id, code, title, active, created_at, meeting_date, guest_upload_enabled. */
-async function createMeeting(){
-  if(!db){
-    alert('Supabase is not connected.');
+    showClosed(
+      "Invalid meeting link. Meeting ID is missing."
+    );
+
     return;
   }
 
-  var name=$('meetingName').value.trim();
-  var meetingDate=$('meetingDate').value||null;
-  var uploads=$('guestEnabled').checked;
 
-  if(!name){
-    alert('Enter meeting name.');
-    $('meetingName').focus();
-    return;
-  }
+  try {
 
-  var btn=$('createMeeting');
-  btn.disabled=true;
-  btn.textContent='Creating…';
+    setStatus(
+      "Checking meeting..."
+    );
 
-  try{
-    /*
-     * The meetings table in this project includes a `code` field.
-     * Generate one explicitly so creation works even when the column
-     * is NOT NULL / has no database default.
-     */
-    var code;
-    if(window.crypto && crypto.randomUUID){
-      code=crypto.randomUUID();
-    }else{
-      code='meet-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
-    }
 
-    var payload={
-      code:code,
-      title:name,
-      meeting_date:meetingDate,
-      guest_upload_enabled:uploads,
-      seat_required:$('seatRequired').checked,
-      active:false
-    };
+    const result =
+      await db
+        .from("meetings")
+        .select(
+          "id,title,meeting_date,guest_upload_enabled,seat_required"
+        )
+        .eq("id", meetingId)
+        .single();
 
-    var r=await db.from('meetings').insert(payload).select('*').single();
 
-    if(r.error){
-      console.error('Create meeting error:',r.error);
-      alert('Could not create meeting.\n\n'+(r.error.message||r.error.details||'Unknown database error'));
+    if (result.error) {
+
+      console.error(
+        "Meeting error:",
+        result.error
+      );
+
+      showClosed(
+        "Meeting not found or unavailable."
+      );
+
       return;
     }
 
-    $('meetingName').value='';
-    $('meetingDate').value='';
-    $('guestEnabled').checked=true;
-    $('seatRequired').checked=true;
 
-    await loadMeetings();
-    await selectMeeting(r.data.id);
+    if (!result.data) {
 
-    setStatus($('meetingStatus'),'Meeting created: '+r.data.title,true);
+      showClosed(
+        "Meeting not found."
+      );
 
-  }catch(err){
-    console.error('Create meeting exception:',err);
-    alert('Could not create meeting.\n\n'+(err.message||err));
-  }finally{
-    btn.disabled=false;
-    btn.textContent='Create Meeting';
-  }
-}
-
-async function loadMeetings(){
-  var r=await db.from('meetings').select('*').order('meeting_date',{ascending:false});
-  if(r.error){setStatus($('meetingStatus'),r.error.message,false);return;}
-
-  var rows=r.data||[];
-  var activeMeeting=rows.find(function(m){return m.active===true;})||null;
-
-  $('meetingSelect').innerHTML='<option value="">Select a meeting</option>'+rows.map(function(m){
-    return '<option value="'+m.id+'">'+escapeHtml(m.title)+(m.active?' — ACTIVE':'')+' · Seat '+(m.seat_required!==false?'Required':'Optional')+'</option>';
-  }).join('');
-
-  if(meeting) $('meetingSelect').value=meeting.id;
-
-  /* Restore the last selected meeting after page refresh. */
-  if(!meeting){
-    var savedMeetingId=null;
-    try{ savedMeetingId=localStorage.getItem(SELECTED_MEETING_KEY); }catch(e){}
-    if(savedMeetingId && rows.some(function(m){return String(m.id)===String(savedMeetingId);})){
-      $('meetingSelect').value=savedMeetingId;
-      selectMeeting(savedMeetingId);
       return;
     }
-  }
 
-  $('meetingList').innerHTML=rows.map(function(m){
-    var selected=meeting && meeting.id===m.id;
-    return '<div class="meeting '+(selected?'active':'')+'" data-meeting-id="'+m.id+'">'
-      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'
-      +'<div style="min-width:0;flex:1">'
-      +'<b>'+escapeHtml(m.title)+'</b>'
-      +'<div class="small">'+escapeHtml(m.meeting_date||'No date')+' · '+(m.guest_upload_enabled?'Uploads ON':'Uploads OFF')+'</div>'
-      +(m.active?'<div class="small" style="color:#13b8a6;font-weight:800;margin-top:4px">● ACTIVE MEETING</div>':'')
-      +'</div>'
-      +'<div class="actions">'
-      +(m.active?'<button type="button" disabled>ACTIVE</button>':'<button type="button" class="secondary" data-active-meeting="'+m.id+'">MAKE ACTIVE</button>')
-      +'<button type="button" class="danger" data-delete-meeting="'+m.id+'">Delete</button>'
-      +'</div>'
-      +'</div></div>';
-  }).join('') || '<div class="small">No meetings.</div>';
 
-  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-meeting-id]'),function(el){
-    el.addEventListener('click',function(e){
-      if(e.target && e.target.closest('[data-delete-meeting]')) return;
-      if(e.target && e.target.closest('[data-active-meeting]')) return;
-      selectMeeting(el.getAttribute('data-meeting-id'));
-    });
-  });
+    currentMeeting =
+      result.data;
 
-  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-active-meeting]'),function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      setActiveMeeting(btn.getAttribute('data-active-meeting'));
-    });
-  });
 
-  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-delete-meeting]'),function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      deleteMeeting(btn.getAttribute('data-delete-meeting'));
-    });
-  });
+    if (
+      !result.data.guest_upload_enabled
+    ) {
 
-  if(activeMeeting){
-    $('activeMeetingStatus').textContent='Active meeting: '+activeMeeting.title;
-    $('activeUploadMeeting').textContent='Local media will upload to: '+activeMeeting.title;
-  }else{
-    $('activeMeetingStatus').textContent='No active meeting.';
-    $('activeUploadMeeting').textContent='No active meeting. Local upload is disabled.';
-  }
+      showClosed(
+        "Guest uploads are currently closed for this meeting."
+      );
 
-  if(!$('meetingSelect').value && activeMeeting){
-    $('meetingSelect').value=activeMeeting.id;
-  }
-}
-async function selectMeeting(id){
-  var r=await db.from('meetings').select('*').eq('id',id).single();
-  if(r.error){alert(r.error.message);return;}
-  meeting=r.data;
-
-  try{ localStorage.setItem(SELECTED_MEETING_KEY,String(meeting.id)); }catch(e){}
-
-  $('meetingSelect').value=meeting.id;
-
-  setStatus($('meetingStatus'),meeting.title+' · '+(meeting.meeting_date||'No date')+' · '+(meeting.active?'● ACTIVE MEETING · ':'')+(meeting.guest_upload_enabled?'UPLOADS ENABLED':'UPLOADS DISABLED')+' · Seat '+(meeting.seat_required!==false?'MANDATORY':'OPTIONAL'),true);
-  $('guestEnabled').checked=!!meeting.guest_upload_enabled;
-  $('seatRequired').checked=meeting.seat_required!==false;
-  updateOperatorSeatField();
-  $('toggleUploads').textContent=meeting.guest_upload_enabled?'Disable Uploads':'Enable Uploads';
-  makeGuestLink();
-  await loadGuests();
-  await loadOperatorMedia();
-  subscribe();
-  startGuestPolling();
-  await loadMeetings();
-
-  var active=await db.from('meetings').select('id,title').eq('active',true).maybeSingle();
-  if(!active.error && active.data){
-    $('activeUploadMeeting').textContent='Local media will upload to: '+active.data.title;
-    $('activeMeetingStatus').textContent='Active meeting: '+active.data.title;
-  }else{
-    $('activeUploadMeeting').textContent='No active meeting. Local upload is disabled.';
-    $('activeMeetingStatus').textContent='No active meeting.';
-  }
-}
-async function setActiveMeeting(id){
-  if(!db)return alert('Supabase is not connected.');
-  var r=await db.from('meetings').select('*').eq('id',id).single();
-  if(r.error){alert(r.error.message);return;}
-  if(!confirm('Make "'+r.data.title+'" the active meeting?'))return;
-
-  setStatus($('meetingStatus'),'Changing active meeting…',undefined);
-
-  var clear=await db.from('meetings').update({active:false}).eq('active',true);
-  if(clear.error){alert('Could not clear current active meeting: '+clear.error.message);return;}
-
-  var make=await db.from('meetings').update({active:true}).eq('id',id);
-  if(make.error){alert('Could not activate meeting: '+make.error.message);return;}
-
-  await selectMeeting(id);
-}
-
-function updateOperatorSeatField(){
-  var paid=$('operatorMemberType').value==='Paid Member';
-  var requiredForMeeting=!meeting || meeting.seat_required!==false;
-  var show=paid && requiredForMeeting;
-  $('operatorSeatField').style.display=show?'block':'none';
-  $('operatorSeatNumber').required=show;
-  if(!show)$('operatorSeatNumber').value='';
-}
-
-function makeGuestLink(){
-  if(!meeting){
-    $('guestUrl').textContent='';
-    $('qr').innerHTML='';
-    $('uploadStatus').textContent='Select a meeting.';
-    return;
-  }
-
-  /* QR always points to the dedicated guest upload page. */
-  var url = new URL('/guest.html', window.location.origin);
-  url.searchParams.set('meeting', meeting.id);
-  var guestUrl = url.href;
-
-  $('guestUrl').textContent=guestUrl;
-  $('qr').innerHTML='';
-
-  var img=document.createElement('img');
-  img.width=240;
-  img.height=240;
-  img.alt='Guest Upload QR';
-  img.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data='+encodeURIComponent(guestUrl);
-  img.onerror=function(){
-    $('qr').innerHTML='<div style="padding:20px;color:#111;font-weight:800;text-align:center">QR service unavailable.<br>Use the guest link below.</div>';
-  };
-  $('qr').appendChild(img);
-
-  $('uploadStatus').textContent=meeting.guest_upload_enabled
-    ? 'Guest uploads ENABLED'
-    : 'Guest uploads DISABLED';
-
-  $('toggleUploads').textContent=meeting.guest_upload_enabled
-    ? 'Disable Uploads'
-    : 'Enable Uploads';
-}
-async function copyGuestLink(){
-  var text=$('guestUrl').textContent;
-  if(!text)return alert('Select a meeting first.');
-  try{await navigator.clipboard.writeText(text);alert('Guest link copied.');}
-  catch(e){prompt('Copy guest link:',text);}
-}
-
-async function toggleGuestUploads(){
-  if(!meeting)return alert('Select a meeting first.');
-  var value=!meeting.guest_upload_enabled;
-  var r=await db.from('meetings').update({guest_upload_enabled:value}).eq('id',meeting.id);
-  if(r.error){alert(r.error.message);return;}
-  meeting.guest_upload_enabled=value;
-  makeGuestLink();
-  $('toggleUploads').textContent=value?'Disable Uploads':'Enable Uploads';
-  await loadMeetings();
-}
-
-async function deleteMeeting(id){
-  if(!db)return alert('Supabase is not connected.');
-
-  var lookup=await db.from('meetings').select('*').eq('id',id).single();
-  if(lookup.error){alert(lookup.error.message);return;}
-  var target=lookup.data;
-
-  var warning='WARNING: Delete this meeting permanently?\\n\\n'
-    +'Meeting: '+target.title+'\\n'
-    +'Date: '+(target.meeting_date||'No date')+'\\n\\n'
-    +'This will remove the meeting, guest records, presentations and operator media records.\\n'
-    +'This action cannot be undone.';
-
-  if(!confirm(warning))return;
-
-  var typed=prompt('Type DELETE to confirm permanent deletion of "'+target.title+'".');
-  if(typed!=='DELETE'){
-    alert('Deletion cancelled.');
-    return;
-  }
-
-  setStatus($('meetingStatus'),'Deleting meeting…',undefined);
-
-  /* Best-effort Storage cleanup. Database deletion below remains authoritative. */
-  try{
-    var prs=await db.from('presentations').select('file_url').eq('meeting_id',id);
-    if(!prs.error){
-      var guestPaths=(prs.data||[]).map(function(x){return storagePathFromPublicUrl(x.file_url,'guest-slides');}).filter(Boolean);
-      if(guestPaths.length)await db.storage.from('guest-slides').remove(guestPaths);
+      return;
     }
-  }catch(e){console.warn('Guest storage cleanup:',e);}
 
-  try{
-    var mm=await db.from('meeting_media').select('file_url').eq('meeting_id',id);
-    if(!mm.error){
-      var operatorPaths=(mm.data||[]).map(function(x){return storagePathFromPublicUrl(x.file_url,'meeting-media');}).filter(Boolean);
-      if(operatorPaths.length)await db.storage.from('meeting-media').remove(operatorPaths);
+
+    meetingSeatRequired =
+      result.data.seat_required !== false;
+
+
+    updateSeatField();
+
+
+    const title =
+      result.data.title ||
+      "Guest Presentation";
+
+
+    const date =
+      result.data.meeting_date;
+
+
+    meetingInfo.textContent =
+      title +
+      (date ? " • " + date : "");
+
+
+    setStatus(
+      "Ready to upload your slide."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showClosed(
+      "Unable to connect to the meeting service."
+    );
+  }
+}
+
+
+/* =========================================================
+   RECHECK MEETING
+   ========================================================= */
+
+async function verifyMeeting() {
+
+  const result =
+    await db
+      .from("meetings")
+      .select(
+        "id,guest_upload_enabled,seat_required"
+      )
+      .eq("id", meetingId)
+      .single();
+
+
+  if (
+    result.error ||
+    !result.data
+  ) {
+
+    throw new Error(
+      "Meeting not found."
+    );
+  }
+
+
+  if (
+    !result.data.guest_upload_enabled
+  ) {
+
+    throw new Error(
+      "Guest uploads have been disabled."
+    );
+  }
+
+
+  meetingSeatRequired =
+    result.data.seat_required !== false;
+
+
+  updateSeatField();
+
+
+  return result.data;
+}
+
+
+/* =========================================================
+   UPLOAD
+   ========================================================= */
+
+form.addEventListener(
+  "submit",
+  async function(event) {
+
+    event.preventDefault();
+
+
+    if (!validateForm()) {
+      return;
     }
-  }catch(e){console.warn('Operator storage cleanup:',e);}
 
-  var a=await db.from('presentations').delete().eq('meeting_id',id);
-  if(a.error){alert('Could not delete presentations: '+a.error.message);return;}
 
-  var b=await db.from('guests').delete().eq('meeting_id',id);
-  if(b.error){alert('Could not delete guests: '+b.error.message);return;}
+    uploadButton.disabled = true;
 
-  var c=await db.from('meeting_media').delete().eq('meeting_id',id);
-  if(c.error){alert('Could not delete operator media: '+c.error.message);return;}
+    uploadButton.textContent =
+      "Uploading...";
 
-  var d=await db.from('meetings').delete().eq('id',id);
-  if(d.error){alert('Could not delete meeting: '+d.error.message);return;}
 
-  if(meeting && meeting.id===id){
-    try{ localStorage.removeItem(SELECTED_MEETING_KEY); }catch(e){}
-    meeting=null;
-    mediaRows=[];
-    lastScreenData=null;
-    broadcastScreen({type:'CLEAR'});
-    $('meetingStatus').textContent='No meeting selected.';
-    $('uploadStatus').textContent='Select a meeting.';
-    $('guestUrl').textContent='';
-    $('qr').innerHTML='';
-    $('guestList').innerHTML='';
-    $('operatorMedia').innerHTML='';
-  }
+    setStatus(
+      "Checking meeting...",
+      "loading"
+    );
 
-  await loadMeetings();
-  alert('Meeting deleted successfully.');
-}
 
-function storagePathFromPublicUrl(url,bucket){
-  if(!url)return null;
-  try{
-    var marker='/storage/v1/object/public/'+bucket+'/';
-    var i=String(url).indexOf(marker);
-    if(i<0)return null;
-    return decodeURIComponent(String(url).slice(i+marker.length));
-  }catch(e){return null;}
-}
+    const name =
+      nameInput.value.trim();
 
-async function loadGuests(){
-  var r=await db.from('guests').select('*,presentations(*)').eq('meeting_id',meeting.id);
-  if(r.error){$('guestList').innerHTML='<div class="small">'+escapeHtml(r.error.message)+'</div>';return;}
-  guestRows=(r.data||[]).sort(function(a,b){
-    var am=a.member_type==='Paid Member',bm=b.member_type==='Paid Member';
-    if(am!==bm)return am?-1:1;
-    if(am)return (Number(a.seat_number)||999999)-(Number(b.seat_number)||999999);
-    return String(a.name||'').localeCompare(String(b.name||''));
-  });
-  renderGuestList();
-}
+    const company =
+      companyInput.value.trim();
 
-function renderGuestList(){
-  var rows=guestRows.slice();
-  var q=(($('guestSearch')&&$('guestSearch').value)||'').trim().toLowerCase();
+    const memberType =
+      memberTypeInput.value;
 
-  if(q) rows=rows.filter(function(g){
-    var ps=g.presentations||[];
-    return [g.name,g.company_name,g.mobile_number,g.mobile,g.phone,g.phone_number,g.member_type,g.seat_number,
-      ps.map(function(p){return p.file_name;}).join(' ')].join(' ').toLowerCase().indexOf(q)!==-1;
-  });
+    const seat =
+      memberType === "Paid Member" &&
+      meetingSeatRequired
+        ? Number(seatInput.value.trim())
+        : null;
 
-  $('guestCount').textContent='('+rows.length+(q?' / '+guestRows.length:'')+')';
+    const file =
+      fileInput.files[0];
 
-  $('guestList').innerHTML=rows.map(function(g){
-    var ps=(g.presentations||[]).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
-    var p=ps[0];
-    var guestMobile=g.mobile_number||g.mobile||g.phone||g.phone_number||'';
-    return '<div class="guest"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+'</div><div>'+escapeHtml(g.company_name)+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
-  }).join('') || '<div class="empty" style="padding:30px">'+(q?'No matching guest presentations.':'No guest slides.')+'</div>';
 
-  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-preview-id]'),function(b){
-    b.addEventListener('click',function(){previewPresentation(b.getAttribute('data-preview-id'));});
-  });
-  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-play-id]'),function(b){
-    b.addEventListener('click',function(){playPresentation(b.getAttribute('data-play-id'));});
-  });
-  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-delete-presentation]'),function(b){
-    b.addEventListener('click',function(){deleteGuestPresentation(b.getAttribute('data-delete-presentation'));});
-  });
-
-  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-local-video-id]'),function(b){
-    b.addEventListener('click',function(){
-      localVideoTarget=b.getAttribute('data-local-video-id');
-      $('localVideoFile').value='';
-      $('localVideoFile').click();
-    });
-  });
-}
-
-function playSelectedLocalVideo(file){
-  if(!file)return;
-
-  if(file.type.indexOf('video/')!==0){
-    alert('Please select a video file.');
-    return;
-  }
-
-  if(localVideoObjectUrl){
-    try{URL.revokeObjectURL(localVideoObjectUrl);}catch(e){}
-  }
-
-  localVideoObjectUrl=URL.createObjectURL(file);
-
-  /*
-   * The video is NOT uploaded to Supabase.
-   * It is read directly from the local PC and played in the browser.
-   * This avoids waiting for a large upload and avoids storage limits.
-   */
-  playNow(localVideoObjectUrl,'video',file.name);
-
-  setStatus(
-    $('operatorUploadStatus'),
-    'Playing local video from this PC: '+file.name+' (not uploaded)',
-    true
-  );
-}
-
-async function deleteGuestPresentation(id){
-  if(!db)return alert('Supabase is not connected.');
-  var r=await db.from('presentations').select('*').eq('id',id).single();
-  if(r.error){alert(r.error.message);return;}
-  var p=r.data;
-  if(!confirm('Delete guest media "'+p.file_name+'"?'))return;
-
-  var path=storagePathFromPublicUrl(p.file_url,'guest-slides');
-  if(path){
-    var sr=await db.storage.from('guest-slides').remove([path]);
-    if(sr.error)console.warn('Guest storage delete:',sr.error);
-  }
-
-  var d=await db.from('presentations').delete().eq('id',id);
-  if(d.error){alert('Could not delete guest media: '+d.error.message);return;}
-
-  if(lastScreenData && lastScreenData.url===p.file_url)broadcastScreen({type:'CLEAR'});
-  await loadGuests();
-}
-
-async function previewPresentation(id){
-  var r=await db.from('presentations').select('*').eq('id',id).single();
-  if(r.error){alert(r.error.message);return;}
-  showLocal(r.data.file_url,mediaType(r.data.file_name),r.data.file_name);
-}
-
-async function playPresentation(id){
-  /*
-   * Update Supabase first so every connected projector/control client
-   * knows which guest presentation is Now Playing.
-   */
-  var r=await db.from('presentations').update({status:'playing',played_at:new Date().toISOString()}).eq('id',id);
-  if(r.error){alert(r.error.message);return;}
-
-  var p=await db.from('presentations').select('*').eq('id',id).single();
-  if(!p.error){
-    playNow(p.data.file_url,mediaType(p.data.file_name),p.data.file_name);
-  }
-  await loadGuests();
-}
-
-async function loadOperatorMedia(){
-  var r=await db.from('meeting_media').select('*').eq('meeting_id',meeting.id).order('sort_order').order('created_at');
-  if(r.error){$('operatorMedia').innerHTML='<div class="small">'+escapeHtml(r.error.message)+'</div>';return;}
-  mediaRows=r.data||[];
-  renderOperatorMedia();
-}
-
-function renderOperatorMedia(){
-  $('operatorMedia').innerHTML=mediaRows.map(function(m){
-    var classification=escapeHtml(m.member_type||'');
-    if(m.member_type==='Paid Member')classification+=' · Seat '+escapeHtml(m.seat_number||'');
-    return '<div class="item"><span class="name">'+escapeHtml(m.file_name)+'</span><span class="small">'+escapeHtml(m.media_type)+' · '+classification+'</span><button class="secondary" data-media-preview="'+m.id+'">Preview</button><button data-media-play="'+m.id+'">Play</button><button class="danger" data-media-delete="'+m.id+'">Delete</button></div>';
-  }).join('') || '<div class="small">No local media for this meeting.</div>';
-
-  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-preview]'),function(b){
-    b.addEventListener('click',function(){
-      var m=mediaRows.find(function(x){return x.id===b.getAttribute('data-media-preview');});
-      if(m)showLocal(m.file_url,m.media_type,m.file_name);
-    });
-  });
-  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-play]'),function(b){
-    b.addEventListener('click',function(){
-      var m=mediaRows.find(function(x){return x.id===b.getAttribute('data-media-play');});
-      if(m)playNow(m.file_url,m.media_type,m.file_name);
-    });
-  });
-  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-delete]'),function(b){
-    b.addEventListener('click',function(){deleteOperatorMedia(b.getAttribute('data-media-delete'));});
-  });
-}
-
-async function deleteOperatorMedia(id){
-  var m=mediaRows.find(function(x){return x.id===id;});
-  if(!m)return;
-  if(!confirm('Delete local media "'+m.file_name+'"?'))return;
-
-  var path=storagePathFromPublicUrl(m.file_url,'meeting-media');
-  if(path){
-    var sr=await db.storage.from('meeting-media').remove([path]);
-    if(sr.error)console.warn('Operator storage delete:',sr.error);
-  }
-
-  var d=await db.from('meeting_media').delete().eq('id',id);
-  if(d.error){alert(d.error.message);return;}
-  if(lastScreenData && lastScreenData.url===m.file_url)broadcastScreen({type:'CLEAR'});
-  await loadOperatorMedia();
-}
-
-async function uploadOperatorMedia(){
-  if(!db)return alert('Supabase is not connected.');
-
-  var activeResult=await db.from('meetings').select('*').eq('active',true).maybeSingle();
-  if(activeResult.error){alert('Unable to find active meeting: '+activeResult.error.message);return;}
-  if(!activeResult.data){alert('No active meeting. Please make a meeting active before uploading local media.');return;}
-
-  var activeMeeting=activeResult.data;
-  var memberType=$('operatorMemberType').value;
-  var seat=$('operatorSeatNumber').value.trim();
-
-  if(memberType==='Paid Member'){
-    if(!seat){alert('Seat Number is required for Paid Members.');$('operatorSeatNumber').focus();return;}
-    if(!/^[0-9]+$/.test(seat)){alert('Seat Number must contain numbers only.');$('operatorSeatNumber').focus();return;}
-  }else{
-    seat=null;
-  }
-
-  var files=Array.prototype.slice.call($('operatorFiles').files||[]);
-  if(!files.length)return alert('Choose image/video files first.');
-
-  $('operatorUploadStatus').textContent='Uploading to: '+activeMeeting.title;
-
-  var success=0;
-  for(var i=0;i<files.length;i++){
-    var f=files[i];
-    var safe=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    var path=activeMeeting.id+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+safe;
-    var up=await db.storage.from('meeting-media').upload(path,f);
-    if(up.error){alert('Upload failed for '+f.name+': '+up.error.message);continue;}
-
-    var pub=db.storage.from('meeting-media').getPublicUrl(path).data.publicUrl;
     /*
-     * meeting_media does not contain member_type / seat_number in the
-     * current Supabase schema. Keep those fields only in the Guest
-     * Presentation flow; operator media is stored independently.
+     * IMPORTANT
+     *
+     * Generate UUID locally.
+     *
+     * We no longer use:
+     *
+     * .insert(...).select("id").single()
+     *
+     * because returning the inserted row can
+     * invoke SELECT RLS.
      */
-    var ins=await db.from('meeting_media').insert({
-      meeting_id:activeMeeting.id,
-      file_name:f.name,
-      file_url:pub,
-      media_type:f.type.indexOf('video/')===0?'video':'image',
-      sort_order:mediaRows.length+i
-    });
 
-    if(ins.error){
-      alert('Database error for '+f.name+': '+ins.error.message);
-      await db.storage.from('meeting-media').remove([path]);
-    }else{
-      success++;
-    }
-  }
+    const guestId =
+      crypto.randomUUID();
 
-  $('operatorFiles').value='';
-  $('operatorUploadStatus').textContent=success+' file(s) uploaded to: '+activeMeeting.title;
 
-  if(meeting && meeting.id===activeMeeting.id)await loadOperatorMedia();
-  await loadMeetings();
-}
+    let storagePath = null;
 
-function startGuestPolling(){
-  if(guestPollTimer) clearInterval(guestPollTimer);
 
-  guestPollTimer=setInterval(async function(){
-    if(!db || !meeting || isScreenMode) return;
+    try {
 
-    try{
-      // Check Supabase every 5 seconds for newly uploaded guest slides.
-      await loadGuests();
-    }catch(e){
-      console.warn('Guest presentation polling:',e);
-    }
-  },5000);
-}
+      /* -------------------------------------------------------
+         1. VERIFY MEETING
+         ------------------------------------------------------- */
 
-function subscribe(){
-  if(realtimeChannel) db.removeChannel(realtimeChannel);
-  realtimeChannel=db.channel('meeting-'+meeting.id)
-    .on('postgres_changes',{event:'*',schema:'public',table:'presentations',filter:'meeting_id=eq.'+meeting.id},function(payload){
-      if(payload.eventType==='UPDATE' && payload.new.status==='playing'){
-        playNow(payload.new.file_url,mediaType(payload.new.file_name),payload.new.file_name);
+      await verifyMeeting();
+
+
+      /* -------------------------------------------------------
+         2. INSERT GUEST
+         ------------------------------------------------------- */
+
+      setStatus(
+        "Registering guest...",
+        "loading"
+      );
+
+
+      const guestInsert =
+        await db
+          .from("guests")
+          .insert({
+
+            id: guestId,
+
+            meeting_id:
+              meetingId,
+
+            name:
+              name,
+
+            company_name:
+              company,
+
+            member_type:
+              memberType,
+
+            seat_number:
+              seat
+
+          });
+
+
+      if (guestInsert.error) {
+
+        console.error(
+          "Guest insert error:",
+          guestInsert.error
+        );
+
+        throw new Error(
+          "Guest registration failed: " +
+          guestInsert.error.message
+        );
       }
-      loadGuests();
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'meeting_media',filter:'meeting_id=eq.'+meeting.id},function(){
-      loadOperatorMedia();
-    })
-    .subscribe();
-}
 
-if(isScreenMode){
-  try{
-    initScreenMode();
-  }catch(err){
-    console.error('Screen startup error:',err);
+
+      /* -------------------------------------------------------
+         3. CREATE STORAGE PATH
+         ------------------------------------------------------- */
+
+      const filename =
+        Date.now() +
+        "-" +
+        guestId +
+        "-" +
+        safeFileName(file.name);
+
+
+      storagePath =
+        meetingId +
+        "/" +
+        guestId +
+        "/" +
+        filename;
+
+
+      /* -------------------------------------------------------
+         4. UPLOAD SLIDE
+         ------------------------------------------------------- */
+
+      setStatus(
+        "Uploading slide...",
+        "loading"
+      );
+
+
+      const upload =
+        await db
+          .storage
+          .from("guest-slides")
+          .upload(
+            storagePath,
+            file,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                file.type ||
+                "application/octet-stream"
+            }
+          );
+
+
+      if (upload.error) {
+
+        console.error(
+          "Storage upload error:",
+          upload.error
+        );
+
+
+        /*
+         * Remove guest record because
+         * storage upload failed.
+         */
+
+        await db
+          .from("guests")
+          .delete()
+          .eq("id", guestId);
+
+
+        throw new Error(
+          "Slide upload failed: " +
+          upload.error.message
+        );
+      }
+
+
+      /* -------------------------------------------------------
+         5. GET PUBLIC URL
+         ------------------------------------------------------- */
+
+      const publicUrlResult =
+        db
+          .storage
+          .from("guest-slides")
+          .getPublicUrl(
+            storagePath
+          );
+
+
+      const fileUrl =
+        publicUrlResult
+          .data
+          .publicUrl;
+
+
+      /* -------------------------------------------------------
+         6. CREATE PRESENTATION RECORD
+         ------------------------------------------------------- */
+
+      setStatus(
+        "Saving presentation...",
+        "loading"
+      );
+
+
+      const presentation =
+        await db
+          .from("presentations")
+          .insert({
+
+            meeting_id:
+              meetingId,
+
+            guest_id:
+              guestId,
+
+            file_name:
+              file.name,
+
+            file_url:
+              fileUrl,
+
+            status:
+              "uploaded"
+
+          });
+
+
+      if (presentation.error) {
+
+        console.error(
+          "Presentation insert error:",
+          presentation.error
+        );
+
+
+        /*
+         * Clean up uploaded file.
+         */
+
+        await db
+          .storage
+          .from("guest-slides")
+          .remove([
+            storagePath
+          ]);
+
+
+        await db
+          .from("guests")
+          .delete()
+          .eq("id", guestId);
+
+
+        throw new Error(
+          "Presentation record failed: " +
+          presentation.error.message
+        );
+      }
+
+
+      /* -------------------------------------------------------
+         7. SUCCESS
+         ------------------------------------------------------- */
+
+      setStatus(
+        "✓ Slide uploaded successfully. The meeting operator will review and play your presentation.",
+        "success"
+      );
+
+
+      uploadButton.textContent =
+        "✓ Slide Uploaded";
+
+
+      nameInput.disabled = true;
+
+      companyInput.disabled = true;
+
+      memberTypeInput.disabled = true;
+
+      seatInput.disabled = true;
+
+      fileInput.disabled = true;
+
+      uploadButton.disabled = true;
+
+
+    } catch (error) {
+
+      console.error(
+        "UPLOAD ERROR:",
+        error
+      );
+
+
+      setStatus(
+        "Upload failed: " +
+        (
+          error.message ||
+          "Unknown error"
+        ),
+        "error"
+      );
+
+
+      uploadButton.disabled =
+        false;
+
+      uploadButton.textContent =
+        "↑ Upload My Slide";
+    }
+
   }
-}else{
-  try{
-    /* Start local controls FIRST. */
-    initLocal();
+);
 
-    /* Then load Supabase independently. */
-    loadSupabase();
-  }catch(err){
-    console.error('Projector startup error:',err);
-    setStatus($('appStatus'),'Startup error: '+(err.message||err),false);
-  }
-}
 
-})();
+/* =========================================================
+   START
+   ========================================================= */
+
+updateSeatField();
+
+loadMeeting();
+
 </script>
+
 </body>
 </html>
