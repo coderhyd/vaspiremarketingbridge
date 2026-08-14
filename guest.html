@@ -1,1066 +1,1183 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Vaspire Guest Slide Upload</title>
+<title>Vaspire Guest Slide Upload</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+*{
+  box-sizing:border-box;
+}
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #06111f;
-      color: white;
-    }
+html,body{
+  margin:0;
+  padding:0;
+  min-height:100%;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#06111f;
+  color:#fff;
+}
 
-    body {
-      padding: 30px 16px 60px;
-    }
+body{
+  padding:45px 16px 60px;
+}
 
-    .container {
-      width: 100%;
-      max-width: 980px;
-      margin: 0 auto;
-    }
+.container{
+  width:100%;
+  max-width:1180px;
+  margin:auto;
+}
 
-    .card {
-      background: #0b1a2a;
-      border: 1px solid #21445e;
-      border-radius: 28px;
-      padding: 45px 48px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.25);
-    }
+.card{
+  background:#0b1a2a;
+  border:1px solid #21445e;
+  border-radius:28px;
+  padding:55px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+}
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(38px, 6vw, 64px);
-      line-height: 1.05;
-      font-weight: 800;
-      letter-spacing: -2px;
-    }
+h1{
+  margin:0 0 14px;
+  font-size:clamp(42px,6vw,72px);
+  line-height:1.05;
+  font-weight:800;
+  letter-spacing:-2px;
+}
 
-    h1 .white {
-      color: #ffffff;
-    }
+.white{
+  color:#fff;
+}
 
-    h1 .teal {
-      color: #16c3b7;
-    }
+.teal{
+  color:#16c3b7;
+}
 
-    .subtitle {
-      margin: 0 0 38px;
-      color: #9db5cb;
-      font-size: 22px;
-    }
+.subtitle{
+  margin:0 0 40px;
+  color:#9db5cb;
+  font-size:24px;
+}
 
-    .meeting-box {
-      background: #061522;
-      border-radius: 18px;
-      padding: 22px 26px;
-      margin-bottom: 35px;
-      color: #a7c1d7;
-      font-size: 22px;
-      min-height: 68px;
-    }
+.meeting-box{
+  background:#061522;
+  border-radius:18px;
+  padding:22px 26px;
+  margin-bottom:35px;
+  color:#a7c1d7;
+  font-size:23px;
+}
 
-    .form-group {
-      margin-bottom: 27px;
-    }
+.form-group{
+  margin-bottom:28px;
+}
 
-    label {
-      display: block;
-      margin-bottom: 12px;
-      color: #a9bfd3;
-      font-size: 25px;
-      font-weight: 700;
-    }
+label{
+  display:block;
+  margin-bottom:12px;
+  color:#a9bfd3;
+  font-size:24px;
+  font-weight:700;
+}
 
-    .required {
-      color: #16c3b7;
-    }
+.required{
+  color:#16c3b7;
+}
 
-    input[type="text"],
-    input[type="number"],
-    select {
-      width: 100%;
-      height: 72px;
-      border: 1px solid #29506b;
-      border-radius: 17px;
-      background: #e8f0fc;
-      color: #111;
-      font-size: 25px;
-      padding: 0 24px;
-      outline: none;
-    }
+input[type="text"],
+input[type="number"],
+select{
+  width:100%;
+  height:72px;
+  border:1px solid #29506b;
+  border-radius:17px;
+  background:#e8f0fc;
+  color:#111;
+  font-size:24px;
+  padding:0 24px;
+  outline:none;
+}
 
-    input:focus,
-    select:focus {
-      border-color: #16c3b7;
-      box-shadow: 0 0 0 3px rgba(22,195,183,.15);
-    }
+input:focus,
+select:focus{
+  border-color:#16c3b7;
+  box-shadow:0 0 0 3px rgba(22,195,183,.15);
+}
 
-    select {
-      background: #071522;
-      color: white;
-    }
+select{
+  background:#071522;
+  color:#fff;
+}
 
-    input[type="file"] {
-      width: 100%;
-      padding: 17px;
-      border: 1px solid #29506b;
-      border-radius: 17px;
-      background: #071522;
-      color: white;
-      font-size: 20px;
-    }
+input[type="file"]{
+  width:100%;
+  padding:18px;
+  border:1px solid #29506b;
+  border-radius:17px;
+  background:#071522;
+  color:#fff;
+  font-size:20px;
+}
 
-    .help {
-      color: #7fa0ba;
-      margin-top: 10px;
-      font-size: 17px;
-    }
+.help{
+  color:#7fa0ba;
+  margin-top:10px;
+  font-size:17px;
+}
 
-    .seat-box {
-      display: none;
-    }
+.seat-box{
+  display:none;
+}
 
-    .seat-box.visible {
-      display: block;
-    }
+.seat-box.visible{
+  display:block;
+}
 
-    .seat-info {
-      margin-top: 8px;
-      color: #8ba9c0;
-      font-size: 16px;
-    }
+.seat-info{
+  margin-top:9px;
+  color:#8ba9c0;
+  font-size:16px;
+}
 
-    button {
-      width: 100%;
-      height: 92px;
-      border: none;
-      border-radius: 18px;
-      background: #16c3b7;
-      color: #001313;
-      font-size: 27px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: .2s;
-      margin-top: 10px;
-    }
+button{
+  width:100%;
+  height:90px;
+  border:none;
+  border-radius:18px;
+  background:#16c3b7;
+  color:#001313;
+  font-size:27px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+}
 
-    button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
+button:hover{
+  filter:brightness(1.05);
+}
 
-    button:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-      transform: none;
-    }
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
 
-    .message {
-      display: none;
-      margin-top: 25px;
-      padding: 22px 24px;
-      border-radius: 17px;
-      font-size: 20px;
-      line-height: 1.5;
-    }
+.message{
+  margin-top:25px;
+  padding:22px 24px;
+  border-radius:17px;
+  font-size:20px;
+  line-height:1.5;
+  display:none;
+}
 
-    .message.error {
-      display: block;
-      background: #111d2b;
-      color: #ff807d;
-    }
+.message.error{
+  display:block;
+  background:#241116;
+  border:1px solid #71353c;
+  color:#ff807d;
+}
 
-    .message.success {
-      display: block;
-      background: #09241f;
-      color: #61e4b7;
-    }
+.message.success{
+  display:block;
+  background:#09241f;
+  border:1px solid #176b58;
+  color:#61e4b7;
+}
 
-    .loading {
-      text-align: center;
-      color: #9eb6ca;
-      font-size: 18px;
-      padding: 30px;
-    }
+.loading{
+  padding:25px;
+  background:#061522;
+  border-radius:17px;
+  color:#9eb6ca;
+  font-size:20px;
+}
 
-    .hidden {
-      display: none !important;
-    }
+.hidden{
+  display:none!important;
+}
 
-    .small-note {
-      margin-top: 25px;
-      text-align: center;
-      color: #718da5;
-      font-size: 15px;
-    }
+.debug{
+  margin-top:20px;
+  padding:15px;
+  background:#061522;
+  border-radius:12px;
+  color:#718da5;
+  font-size:13px;
+  word-break:break-all;
+}
 
-    @media (max-width: 700px) {
-      body {
-        padding: 12px;
-      }
+.success-box{
+  text-align:center;
+  padding:35px 20px;
+  background:#09241f;
+  border-radius:18px;
+  margin-top:25px;
+}
 
-      .card {
-        padding: 30px 20px;
-        border-radius: 22px;
-      }
+.success-box h2{
+  color:#61e4b7;
+  margin-top:0;
+}
 
-      .subtitle {
-        font-size: 18px;
-      }
+@media(max-width:700px){
 
-      label {
-        font-size: 20px;
-      }
+  body{
+    padding:15px 10px;
+  }
 
-      input[type="text"],
-      input[type="number"],
-      select {
-        height: 62px;
-        font-size: 20px;
-      }
+  .card{
+    padding:30px 20px;
+  }
 
-      button {
-        height: 75px;
-        font-size: 22px;
-      }
+  h1{
+    font-size:44px;
+  }
 
-      .meeting-box {
-        font-size: 18px;
-      }
-    }
-  </style>
+  .subtitle{
+    font-size:18px;
+  }
+
+  label{
+    font-size:20px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select{
+    height:62px;
+    font-size:20px;
+  }
+
+  button{
+    height:75px;
+    font-size:22px;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <div class="card">
+<div class="card">
 
-    <h1>
-      <span class="white">Vaspire </span>
-      <span class="teal">Guest Slide Upload</span>
-    </h1>
+<h1>
+<span class="white">Vaspire </span>
+<span class="teal">Guest Slide Upload</span>
+</h1>
 
-    <p class="subtitle">
-      Submit your presentation slide for the meeting.
-    </p>
+<p class="subtitle">
+Submit your presentation slide for the meeting.
+</p>
 
-    <div id="loading" class="loading">
-      Loading meeting details...
-    </div>
+<!-- ALWAYS VISIBLE STATUS -->
+<div id="statusBox" class="message"></div>
 
-    <div id="mainForm" class="hidden">
+<!-- LOADING -->
+<div id="loading" class="loading">
+Loading meeting details...
+</div>
 
-      <div class="meeting-box" id="meetingInfo">
-        Loading...
-      </div>
+<!-- MAIN FORM -->
+<div id="mainForm" class="hidden">
 
-      <!-- NAME -->
-      <div class="form-group">
-        <label>
-          Name <span class="required">*</span>
-        </label>
+<div id="meetingInfo" class="meeting-box"></div>
 
-        <input
-          type="text"
-          id="name"
-          placeholder="Enter your name"
-          required
-        >
-      </div>
+<!-- NAME -->
+<div class="form-group">
 
-      <!-- COMPANY -->
-      <div class="form-group">
-        <label>
-          Company Name <span class="required">*</span>
-        </label>
+<label>
+Name <span class="required">*</span>
+</label>
 
-        <input
-          type="text"
-          id="company"
-          placeholder="Enter company name"
-          required
-        >
-      </div>
+<input
+type="text"
+id="name"
+placeholder="Enter your name"
+required
+>
 
-      <!-- MEMBER TYPE -->
-      <div class="form-group">
+</div>
 
-        <label>
-          Member Type <span class="required">*</span>
-        </label>
+<!-- COMPANY -->
+<div class="form-group">
 
-        <select id="memberType" required>
-          <option value="Visitor">Visitor</option>
-          <option value="Paid Member">Paid Member</option>
-        </select>
+<label>
+Company Name <span class="required">*</span>
+</label>
 
-      </div>
+<input
+type="text"
+id="company"
+placeholder="Enter company name"
+required
+>
 
-      <!-- SEAT NUMBER -->
-      <div class="form-group seat-box" id="seatBox">
+</div>
 
-        <label>
-          Seat Number <span class="required">*</span>
-        </label>
+<!-- MEMBER TYPE -->
+<div class="form-group">
 
-        <input
-          type="number"
-          id="seatNumber"
-          min="1"
-          step="1"
-          placeholder="Enter your seat number"
-        >
+<label>
+Member Type <span class="required">*</span>
+</label>
 
-        <div class="seat-info">
-          Seat number is required for Paid Members for this meeting.
-        </div>
+<select id="memberType">
 
-      </div>
+<option value="Visitor">
+Visitor
+</option>
 
-      <!-- SLIDE -->
-      <div class="form-group">
+<option value="Paid Member">
+Paid Member
+</option>
 
-        <label>
-          Slide <span class="required">*</span>
-        </label>
+</select>
 
-        <input
-          type="file"
-          id="slide"
-          accept=".jpg,.jpeg,.png,.webp,.pdf"
-          required
-        >
+</div>
 
-        <div class="help">
-          Accepted: JPG, PNG, WEBP or PDF.
-        </div>
+<!-- SEAT -->
+<div
+class="form-group seat-box"
+id="seatBox"
+>
 
-      </div>
+<label>
+Seat Number <span class="required">*</span>
+</label>
 
-      <button id="uploadBtn" onclick="uploadSlide()">
-        ↑ Upload My Slide
-      </button>
+<input
+type="number"
+id="seatNumber"
+min="1"
+step="1"
+placeholder="Enter seat number"
+>
 
-      <div id="message" class="message"></div>
+<div class="seat-info">
+Seat number is required for Paid Members for this meeting.
+</div>
 
-      <div class="small-note">
-        Your slide will be submitted to the meeting presentation system.
-      </div>
+</div>
 
-    </div>
+<!-- FILE -->
+<div class="form-group">
 
-  </div>
+<label>
+Slide <span class="required">*</span>
+</label>
 
+<input
+type="file"
+id="slide"
+accept=".jpg,.jpeg,.png,.webp,.pdf"
+>
+
+<div class="help">
+Accepted: JPG, PNG, WEBP or PDF.
+Maximum size: 20 MB.
+</div>
+
+</div>
+
+<button
+id="uploadBtn"
+onclick="uploadSlide()"
+>
+↑ Upload My Slide
+</button>
+
+<div id="message" class="message"></div>
+
+</div>
+
+<div
+id="debugBox"
+class="debug"
+>
+Meeting URL parameter:
+<span id="meetingIdDisplay"></span>
+</div>
+
+</div>
 </div>
 
 
 <script>
 
 /* ============================================================
-   SUPABASE CONFIGURATION
-   ============================================================ */
+SUPABASE
+============================================================ */
 
 const SUPABASE_URL =
-  "https://zhufcryqamaubxjorjgm.supabase.co";
+"https://zhufcryqamaubxjorjgm.supabase.co";
 
 const SUPABASE_ANON_KEY =
-  "sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN";
+"sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN";
 
 const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
-
-
-/* ============================================================
-   GET MEETING CODE / ID FROM URL
-   ============================================================ */
-
-const params = new URLSearchParams(window.location.search);
-
-const meetingId =
-  params.get("meeting");
-
-let meeting = null;
-
-
-/* ============================================================
-   ELEMENTS
-   ============================================================ */
-
-const loadingEl =
-  document.getElementById("loading");
-
-const mainFormEl =
-  document.getElementById("mainForm");
-
-const meetingInfoEl =
-  document.getElementById("meetingInfo");
-
-const seatBoxEl =
-  document.getElementById("seatBox");
-
-const seatNumberEl =
-  document.getElementById("seatNumber");
-
-const memberTypeEl =
-  document.getElementById("memberType");
-
-const messageEl =
-  document.getElementById("message");
-
-const uploadBtnEl =
-  document.getElementById("uploadBtn");
-
-
-/* ============================================================
-   SHOW MESSAGE
-   ============================================================ */
-
-function showMessage(text, type) {
-
-  messageEl.textContent = text;
-
-  messageEl.className =
-    "message " + type;
-
-}
-
-
-/* ============================================================
-   HIDE MESSAGE
-   ============================================================ */
-
-function clearMessage() {
-
-  messageEl.textContent = "";
-
-  messageEl.className = "message";
-
-}
-
-
-/* ============================================================
-   FORMAT DATE
-   ============================================================ */
-
-function formatDate(dateString) {
-
-  if (!dateString) {
-    return "";
-  }
-
-  const d =
-    new Date(dateString + "T00:00:00");
-
-  return d.toLocaleDateString(
-    "en-IN",
-    {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }
-  );
-
-}
-
-
-/* ============================================================
-   UPDATE SEAT FIELD
-   ============================================================ */
-
-function updateSeatVisibility() {
-
-  const type =
-    memberTypeEl.value;
-
-  /*
-     The database check constraint is based on
-     member type + seat number.
-
-     For Paid Members:
-       seat number is required when meeting.seat_required = true.
-
-     For Visitors:
-       seat number is always left NULL.
-  */
-
-  if (
-    meeting &&
-    meeting.seat_required === true &&
-    type === "Paid Member"
-  ) {
-
-    seatBoxEl.classList.add("visible");
-
-    seatNumberEl.required = true;
-
-  } else {
-
-    seatBoxEl.classList.remove("visible");
-
-    seatNumberEl.required = false;
-
-    seatNumberEl.value = "";
-
-  }
-
-}
-
-
-/* ============================================================
-   LOAD MEETING
-   ============================================================ */
-
-async function loadMeeting() {
-
-  try {
-
-    if (!meetingId) {
-
-      throw new Error(
-        "Meeting ID is missing from the URL."
-      );
-
-    }
-
-    /*
-       The URL currently looks like:
-
-       guest.html?meeting=c1ff5d8e-73c3-4306-9141-3f89c0a911f3
-
-       So meetingId is the UUID.
-    */
-
-    const { data, error } =
-      await supabaseClient
-        .from("meetings")
-        .select(`
-          id,
-          code,
-          title,
-          active,
-          meeting_date,
-          guest_upload_enabled,
-          seat_required
-        `)
-        .eq("id", meetingId)
-        .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    if (!data) {
-
-      throw new Error(
-        "Meeting not found."
-      );
-
-    }
-
-    meeting = data;
-
-
-    /* --------------------------------------------------------
-       CHECK MEETING STATUS
-       -------------------------------------------------------- */
-
-    if (meeting.active === false) {
-
-      throw new Error(
-        "This meeting is no longer active."
-      );
-
-    }
-
-
-    if (meeting.guest_upload_enabled === false) {
-
-      throw new Error(
-        "Guest slide upload is disabled for this meeting."
-      );
-
-    }
-
-
-    /* --------------------------------------------------------
-       SHOW MEETING
-       -------------------------------------------------------- */
-
-    let meetingTitle =
-      meeting.title || "Guest Presentation";
-
-    let dateText =
-      formatDate(meeting.meeting_date);
-
-    if (dateText) {
-
-      meetingInfoEl.textContent =
-        meetingTitle + " • " + dateText;
-
-    } else {
-
-      meetingInfoEl.textContent =
-        meetingTitle;
-
-    }
-
-
-    /* --------------------------------------------------------
-       SHOW FORM
-       -------------------------------------------------------- */
-
-    loadingEl.classList.add("hidden");
-
-    mainFormEl.classList.remove("hidden");
-
-
-    /* --------------------------------------------------------
-       SEAT FIELD
-       -------------------------------------------------------- */
-
-    updateSeatVisibility();
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Meeting loading error:",
-      error
-    );
-
-    loadingEl.classList.add("hidden");
-
-    showMessage(
-      "Unable to load meeting: " +
-      (error.message || error),
-      "error"
-    );
-
-  }
-
-}
-
-
-/* ============================================================
-   MEMBER TYPE CHANGE
-   ============================================================ */
-
-memberTypeEl.addEventListener(
-  "change",
-  function () {
-
-    clearMessage();
-
-    updateSeatVisibility();
-
-  }
+window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_ANON_KEY
 );
 
 
 /* ============================================================
-   UPLOAD SLIDE
-   ============================================================ */
+URL
+============================================================ */
 
-async function uploadSlide() {
+const params =
+new URLSearchParams(
+window.location.search
+);
 
-  clearMessage();
+const meetingId =
+params.get("meeting");
 
 
-  /* ----------------------------------------------------------
-     GET VALUES
-     ---------------------------------------------------------- */
+/* ============================================================
+ELEMENTS
+============================================================ */
 
-  const name =
-    document.getElementById("name")
-      .value
-      .trim();
+const loading =
+document.getElementById("loading");
 
-  const company =
-    document.getElementById("company")
-      .value
-      .trim();
+const mainForm =
+document.getElementById("mainForm");
 
-  const memberType =
-    memberTypeEl.value;
+const statusBox =
+document.getElementById("statusBox");
 
-  const file =
-    document.getElementById("slide")
-      .files[0];
+const meetingInfo =
+document.getElementById("meetingInfo");
 
+const memberType =
+document.getElementById("memberType");
 
-  /* ----------------------------------------------------------
-     VALIDATION
-     ---------------------------------------------------------- */
+const seatBox =
+document.getElementById("seatBox");
 
-  if (!name) {
+const seatNumber =
+document.getElementById("seatNumber");
 
-    showMessage(
-      "Please enter your name.",
-      "error"
-    );
+const uploadBtn =
+document.getElementById("uploadBtn");
 
-    return;
-  }
+const message =
+document.getElementById("message");
 
+const meetingIdDisplay =
+document.getElementById("meetingIdDisplay");
 
-  if (!company) {
+meetingIdDisplay.textContent =
+meetingId || "MISSING";
 
-    showMessage(
-      "Please enter your company name.",
-      "error"
-    );
 
-    return;
-  }
+/* ============================================================
+STATUS
+============================================================ */
 
+function showStatus(text){
 
-  if (!file) {
+statusBox.textContent = text;
 
-    showMessage(
-      "Please select your presentation slide.",
-      "error"
-    );
+statusBox.className =
+"message error";
 
-    return;
-  }
+}
 
+function clearStatus(){
 
-  /* ----------------------------------------------------------
-     SEAT NUMBER
-     ---------------------------------------------------------- */
+statusBox.textContent = "";
 
-  let seatNumber = null;
-
-
-  if (
-    meeting &&
-    meeting.seat_required === true &&
-    memberType === "Paid Member"
-  ) {
-
-    const seatValue =
-      seatNumberEl.value.trim();
-
-    if (!seatValue) {
-
-      showMessage(
-        "Please enter your seat number.",
-        "error"
-      );
-
-      seatNumberEl.focus();
-
-      return;
-    }
-
-    seatNumber =
-      parseInt(seatValue, 10);
-
-
-    if (
-      !Number.isInteger(seatNumber) ||
-      seatNumber < 1
-    ) {
-
-      showMessage(
-        "Please enter a valid seat number.",
-        "error"
-      );
-
-      seatNumberEl.focus();
-
-      return;
-    }
-
-  }
-
-
-  /* ----------------------------------------------------------
-     FILE VALIDATION
-     ---------------------------------------------------------- */
-
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "application/pdf"
-  ];
-
-  if (
-    !allowedTypes.includes(file.type)
-  ) {
-
-    showMessage(
-      "Only JPG, PNG, WEBP or PDF files are accepted.",
-      "error"
-    );
-
-    return;
-  }
-
-
-  /* ----------------------------------------------------------
-     FILE SIZE
-     ---------------------------------------------------------- */
-
-  const maxSize =
-    20 * 1024 * 1024;
-
-  if (file.size > maxSize) {
-
-    showMessage(
-      "File is too large. Maximum size is 20 MB.",
-      "error"
-    );
-
-    return;
-  }
-
-
-  /* ----------------------------------------------------------
-     DISABLE BUTTON
-     ---------------------------------------------------------- */
-
-  uploadBtnEl.disabled = true;
-
-  uploadBtnEl.textContent =
-    "Uploading...";
-
-
-  try {
-
-
-    /* ========================================================
-       CREATE FILE NAME
-       ======================================================== */
-
-    const extension =
-      file.name
-        .split(".")
-        .pop()
-        .toLowerCase();
-
-
-    const safeName =
-      name
-        .replace(/[^a-zA-Z0-9]/g, "_")
-        .substring(0, 40);
-
-
-    const uniqueId =
-      crypto.randomUUID();
-
-
-    const filePath =
-      meeting.id +
-      "/" +
-      Date.now() +
-      "_" +
-      safeName +
-      "_" +
-      uniqueId +
-      "." +
-      extension;
-
-
-    /* ========================================================
-       UPLOAD FILE TO STORAGE
-       ======================================================== */
-
-    const {
-      data: storageData,
-      error: storageError
-    } =
-      await supabaseClient
-        .storage
-        .from("guest-slides")
-        .upload(
-          filePath,
-          file,
-          {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: file.type
-          }
-        );
-
-
-    if (storageError) {
-
-      throw new Error(
-        "File upload failed: " +
-        storageError.message
-      );
-
-    }
-
-
-    /* ========================================================
-       GET PUBLIC URL
-       ======================================================== */
-
-    const {
-      data: publicUrlData
-    } =
-      supabaseClient
-        .storage
-        .from("guest-slides")
-        .getPublicUrl(filePath);
-
-
-    const slideUrl =
-      publicUrlData.publicUrl;
-
-
-    /* ========================================================
-       INSERT GUEST RECORD
-       ======================================================== */
-
-    const guestRecord = {
-
-      meeting_id: meeting.id,
-
-      name: name,
-
-      company: company,
-
-      slide_path: filePath,
-
-      slide_url: slideUrl,
-
-      status: "ready",
-
-      member_type: memberType,
-
-      seat_number: seatNumber,
-
-      slide_name: file.name
-
-    };
-
-
-    console.log(
-      "Guest record:",
-      guestRecord
-    );
-
-
-    const {
-      data: insertedGuest,
-      error: insertError
-    } =
-      await supabaseClient
-        .from("guests")
-        .insert(
-          guestRecord
-        )
-        .select()
-        .single();
-
-
-    if (insertError) {
-
-      /*
-         If the database rejects the row,
-         delete the uploaded file so we don't
-         leave orphaned files in Storage.
-      */
-
-      await supabaseClient
-        .storage
-        .from("guest-slides")
-        .remove([
-          filePath
-        ]);
-
-
-      throw new Error(
-        insertError.message
-      );
-
-    }
-
-
-    /* ========================================================
-       SUCCESS
-       ======================================================== */
-
-    showMessage(
-      "Your slide has been uploaded successfully.",
-      "success"
-    );
-
-
-    uploadBtnEl.textContent =
-      "✓ Slide Uploaded";
-
-
-    uploadBtnEl.disabled = true;
-
-
-    /*
-       Clear fields after successful upload
-    */
-
-    document.getElementById("name").value = "";
-
-    document.getElementById("company").value = "";
-
-    document.getElementById("slide").value = "";
-
-    seatNumberEl.value = "";
-
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Upload error:",
-      error
-    );
-
-
-    showMessage(
-      "Upload failed: " +
-      (error.message || error),
-      "error"
-    );
-
-
-    uploadBtnEl.disabled = false;
-
-    uploadBtnEl.textContent =
-      "↑ Upload My Slide";
-
-  }
+statusBox.className =
+"message";
 
 }
 
 
 /* ============================================================
-   START
-   ============================================================ */
+MESSAGE
+============================================================ */
+
+function showMessage(text,type){
+
+message.textContent = text;
+
+message.className =
+"message " + type;
+
+}
+
+
+/* ============================================================
+DATE
+============================================================ */
+
+function formatDate(value){
+
+if(!value){
+return "";
+}
+
+const date =
+new Date(value + "T00:00:00");
+
+return date.toLocaleDateString(
+"en-IN",
+{
+day:"2-digit",
+month:"2-digit",
+year:"numeric"
+}
+);
+
+}
+
+
+/* ============================================================
+SEAT VISIBILITY
+============================================================ */
+
+function updateSeat(){
+
+if(
+window.currentMeeting &&
+window.currentMeeting.seat_required === true &&
+memberType.value === "Paid Member"
+){
+
+seatBox.classList.add("visible");
+
+seatNumber.required = true;
+
+}else{
+
+seatBox.classList.remove("visible");
+
+seatNumber.required = false;
+
+seatNumber.value = "";
+
+}
+
+}
+
+
+/* ============================================================
+MEMBER TYPE
+============================================================ */
+
+memberType.addEventListener(
+"change",
+updateSeat
+);
+
+
+/* ============================================================
+LOAD MEETING
+============================================================ */
+
+async function loadMeeting(){
+
+clearStatus();
+
+console.log(
+"Meeting ID:",
+meetingId
+);
+
+
+/* ------------------------------------------------------------
+CHECK URL
+------------------------------------------------------------ */
+
+if(!meetingId){
+
+loading.classList.add("hidden");
+
+showStatus(
+"Meeting ID is missing from the URL."
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+QUERY
+------------------------------------------------------------ */
+
+try{
+
+const {
+data,
+error
+} = await supabaseClient
+.from("meetings")
+.select(`
+id,
+code,
+title,
+active,
+meeting_date,
+guest_upload_enabled,
+seat_required
+`)
+.eq("id",meetingId)
+.maybeSingle();
+
+
+/* ------------------------------------------------------------
+ERROR
+------------------------------------------------------------ */
+
+if(error){
+
+console.error(
+"Supabase meeting error:",
+error
+);
+
+throw new Error(
+error.message
+);
+
+}
+
+
+/* ------------------------------------------------------------
+NOT FOUND
+------------------------------------------------------------ */
+
+if(!data){
+
+throw new Error(
+"Meeting was not found. Check the meeting ID or the RLS policy on the meetings table."
+);
+
+}
+
+
+/* ------------------------------------------------------------
+SAVE
+------------------------------------------------------------ */
+
+window.currentMeeting =
+data;
+
+console.log(
+"Meeting loaded:",
+data
+);
+
+
+/* ------------------------------------------------------------
+CHECK ACTIVE
+------------------------------------------------------------ */
+
+if(data.active === false){
+
+throw new Error(
+"This meeting is not active."
+);
+
+}
+
+
+/* ------------------------------------------------------------
+CHECK UPLOAD
+------------------------------------------------------------ */
+
+if(
+data.guest_upload_enabled === false
+){
+
+throw new Error(
+"Guest slide upload is disabled for this meeting."
+);
+
+}
+
+
+/* ------------------------------------------------------------
+MEETING DISPLAY
+------------------------------------------------------------ */
+
+let title =
+data.title ||
+"Guest Presentation";
+
+let date =
+formatDate(
+data.meeting_date
+);
+
+if(date){
+
+meetingInfo.textContent =
+title + " • " + date;
+
+}else{
+
+meetingInfo.textContent =
+title;
+
+}
+
+
+/* ------------------------------------------------------------
+SHOW FORM
+------------------------------------------------------------ */
+
+loading.classList.add("hidden");
+
+mainForm.classList.remove("hidden");
+
+updateSeat();
+
+console.log(
+"Guest upload form ready."
+);
+
+}
+
+
+/* ------------------------------------------------------------
+CATCH
+------------------------------------------------------------ */
+
+catch(error){
+
+console.error(
+"LOAD ERROR:",
+error
+);
+
+loading.classList.add("hidden");
+
+mainForm.classList.add("hidden");
+
+showStatus(
+"Unable to load meeting: " +
+(error.message || error)
+);
+
+}
+
+}
+
+
+/* ============================================================
+UPLOAD
+============================================================ */
+
+async function uploadSlide(){
+
+message.className =
+"message";
+
+message.textContent =
+"";
+
+
+/* ------------------------------------------------------------
+VALUES
+------------------------------------------------------------ */
+
+const name =
+document
+.getElementById("name")
+.value
+.trim();
+
+const company =
+document
+.getElementById("company")
+.value
+.trim();
+
+const type =
+memberType.value;
+
+const file =
+document
+.getElementById("slide")
+.files[0];
+
+
+/* ------------------------------------------------------------
+VALIDATE NAME
+------------------------------------------------------------ */
+
+if(!name){
+
+showMessage(
+"Please enter your name.",
+"error"
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+VALIDATE COMPANY
+------------------------------------------------------------ */
+
+if(!company){
+
+showMessage(
+"Please enter your company name.",
+"error"
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+VALIDATE FILE
+------------------------------------------------------------ */
+
+if(!file){
+
+showMessage(
+"Please select your presentation slide.",
+"error"
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+FILE TYPE
+------------------------------------------------------------ */
+
+const allowed = [
+
+"image/jpeg",
+"image/png",
+"image/webp",
+"application/pdf"
+
+];
+
+if(!allowed.includes(file.type)){
+
+showMessage(
+"Only JPG, PNG, WEBP or PDF files are accepted.",
+"error"
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+FILE SIZE
+------------------------------------------------------------ */
+
+if(file.size > 20 * 1024 * 1024){
+
+showMessage(
+"File is too large. Maximum size is 20 MB.",
+"error"
+);
+
+return;
+
+}
+
+
+/* ------------------------------------------------------------
+SEAT
+------------------------------------------------------------ */
+
+let seat = null;
+
+if(
+window.currentMeeting.seat_required === true &&
+type === "Paid Member"
+){
+
+const value =
+seatNumber.value.trim();
+
+if(!value){
+
+showMessage(
+"Please enter your seat number.",
+"error"
+);
+
+return;
+
+}
+
+seat =
+parseInt(value,10);
+
+if(
+!Number.isInteger(seat) ||
+seat < 1
+){
+
+showMessage(
+"Please enter a valid seat number.",
+"error"
+);
+
+return;
+
+}
+
+}
+
+
+/* ------------------------------------------------------------
+BUTTON
+------------------------------------------------------------ */
+
+uploadBtn.disabled = true;
+
+uploadBtn.textContent =
+"Uploading...";
+
+
+try{
+
+
+/* ============================================================
+FILE PATH
+============================================================ */
+
+const extension =
+file.name
+.split(".")
+.pop()
+.toLowerCase();
+
+const safeName =
+name
+.replace(
+/[^a-zA-Z0-9]/g,
+"_"
+)
+.substring(0,40);
+
+const unique =
+crypto.randomUUID();
+
+const path =
+window.currentMeeting.id +
+"/" +
+Date.now() +
+"_" +
+safeName +
+"_" +
+unique +
+"." +
+extension;
+
+
+/* ============================================================
+STORAGE
+============================================================ */
+
+const {
+error: storageError
+} =
+await supabaseClient
+.storage
+.from("guest-slides")
+.upload(
+path,
+file,
+{
+cacheControl:"3600",
+upsert:false,
+contentType:file.type
+}
+);
+
+if(storageError){
+
+throw new Error(
+"Storage upload failed: " +
+storageError.message
+);
+
+}
+
+
+/* ============================================================
+PUBLIC URL
+============================================================ */
+
+const {
+data:publicData
+} =
+supabaseClient
+.storage
+.from("guest-slides")
+.getPublicUrl(path);
+
+const slideUrl =
+publicData.publicUrl;
+
+
+/* ============================================================
+DATABASE
+============================================================ */
+
+const record = {
+
+meeting_id:
+window.currentMeeting.id,
+
+name:
+name,
+
+company:
+company,
+
+slide_path:
+path,
+
+slide_url:
+slideUrl,
+
+status:
+"ready",
+
+member_type:
+type,
+
+seat_number:
+seat,
+
+slide_name:
+file.name
+
+};
+
+
+console.log(
+"INSERTING:",
+record
+);
+
+
+const {
+data,
+error
+} =
+await supabaseClient
+.from("guests")
+.insert(record)
+.select()
+.single();
+
+
+/* ============================================================
+INSERT ERROR
+============================================================ */
+
+if(error){
+
+/*
+Remove uploaded file if DB insert fails.
+*/
+
+await supabaseClient
+.storage
+.from("guest-slides")
+.remove([path]);
+
+throw new Error(
+error.message
+);
+
+}
+
+
+/* ============================================================
+SUCCESS
+============================================================ */
+
+console.log(
+"Guest inserted:",
+data
+);
+
+showMessage(
+"✓ Your slide has been uploaded successfully.",
+"success"
+);
+
+uploadBtn.disabled = true;
+
+uploadBtn.textContent =
+"✓ Slide Uploaded";
+
+
+/* ============================================================
+CLEAR
+============================================================ */
+
+document
+.getElementById("name")
+.value = "";
+
+document
+.getElementById("company")
+.value = "";
+
+document
+.getElementById("slide")
+.value = "";
+
+seatNumber.value = "";
+
+
+}
+catch(error){
+
+console.error(
+"UPLOAD ERROR:",
+error
+);
+
+showMessage(
+"Upload failed: " +
+(error.message || error),
+"error"
+);
+
+uploadBtn.disabled = false;
+
+uploadBtn.textContent =
+"↑ Upload My Slide";
+
+}
+
+}
+
+
+/* ============================================================
+START
+============================================================ */
 
 loadMeeting();
 
