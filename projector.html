@@ -1,0 +1,1162 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vaspire Projector Control</title>
+<style>
+:root{--bg:#06101c;--panel:#0d1b2a;--panel2:#102235;--line:#29455c;--text:#eef6fb;--muted:#91a7bb;--accent:#13b8a6;--danger:#ef5350}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#06101c,#0c1d2c);color:var(--text);font:14px Arial,sans-serif}
+.wrap{max-width:1500px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-size:23px;font-weight:800}.brand span{color:var(--accent)}
+.grid{display:grid;grid-template-columns:330px 1fr;gap:15px;margin-top:15px}.main{display:grid;grid-template-columns:1fr 390px;gap:15px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:15px}
+h3{margin:3px 0 12px}.row,.toolbar{display:flex;gap:7px;flex-wrap:wrap}button{border:0;border-radius:8px;padding:10px 13px;background:var(--accent);color:#031511;font-weight:800;cursor:pointer}button.secondary{background:#213a50;color:#fff}button.danger{background:var(--danger);color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
+.field{margin:9px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#071522;color:#fff}
+.status{padding:9px;border-radius:8px;background:#071522;color:var(--muted);margin:9px 0}.ok{color:#61e4ca}.bad{color:#ff9a96}
+.meetings,.list{max-height:380px;overflow:auto}.meeting{padding:9px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer}.meeting.active{border-color:var(--accent);background:#123042}
+.qr{background:#fff;padding:10px;width:max-content;margin:10px auto;border-radius:8px;min-height:20px}.url{font-size:11px;color:#9debe0;word-break:break-all}
+.preview{height:440px;background:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}.preview img,.preview video{max-width:100%;max-height:100%;object-fit:contain}.empty{color:#60778b;text-align:center}
+.item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--line)}.name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.small{font-size:11px;color:var(--muted)}
+.guest{display:grid;grid-template-columns:52px minmax(150px,1.15fr) minmax(150px,1.15fr) 125px 105px minmax(170px,1.3fr) 235px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);min-height:52px}.guest.head{color:var(--muted);font-size:11px;font-weight:800;min-height:34px;padding-top:5px;padding-bottom:5px}.guest>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.guest .small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;overflow:visible}.actions button{font-size:11px;padding:7px 9px;white-space:nowrap;min-width:auto}.guestListWrap{overflow-x:auto}.guestListWrap .guest{min-width:1050px}@media(max-width:1050px){.grid,.main{grid-template-columns:1fr}.preview{height:330px}.guest{grid-template-columns:45px 1.1fr 1.1fr 110px 90px 1.2fr 210px;min-width:980px}.guest.head{min-width:980px}.guestListWrap{overflow-x:auto}.actions{flex-wrap:nowrap}}
+.screen-mode{background:#000!important;width:100vw;height:100vh;overflow:hidden}.screen-mode .wrap{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Vaspire <span>Projector Control</span></div>
+    <div class="row">
+      <button id="openScreen" class="secondary">Open Screen 2</button>
+      <button id="fullscreen" class="secondary">Fullscreen</button>
+    </div>
+  </div>
+
+  <div id="appStatus" class="status">Starting control panel…</div>
+
+  <div class="grid">
+    <aside>
+      <section class="panel">
+        <h3>Meeting Manager</h3>
+        <div class="field"><label>Meeting Name</label><input id="meetingName" placeholder="RBG Platinum Meet"></div>
+        <div class="field"><label>Meeting Date</label><input id="meetingDate" type="date"></div>
+        <label><input id="guestEnabled" type="checkbox" checked> Guest uploads enabled</label>
+        <br><br><button id="createMeeting">Create Meeting</button>
+
+        <div class="field">
+          <label>View Meeting Media</label>
+          <select id="meetingSelect">
+            <option value="">Select a meeting</option>
+          </select>
+        </div>
+
+        <div id="meetingStatus" class="status">No meeting selected.</div>
+        <div id="activeMeetingStatus" class="status">No active meeting.</div>
+
+        <h3>Meetings</h3>
+        <div id="meetingList" class="meetings"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Guest Upload QR</h3>
+        <div id="uploadStatus" class="status">Select a meeting.</div>
+        <div id="qr" class="qr"></div>
+        <div id="guestUrl" class="url"></div>
+        <div class="row">
+          <button id="copyLink" class="secondary">Copy Link</button>
+          <button id="toggleUploads" class="secondary">Disable Uploads</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <div class="main">
+        <section class="panel">
+          <h3>Live Preview</h3>
+          <div class="toolbar">
+            <button id="stopLive" class="secondary">■ Stop Live</button>
+            <button id="clearPreview" class="secondary">Clear</button>
+          </div>
+          <div id="preview" class="preview"><div class="empty">No slide selected</div></div>
+        </section>
+
+        <section class="panel">
+          <h3>Local Media Upload</h3>
+
+          <div id="activeUploadMeeting" class="status">No active meeting. Local upload is disabled.</div>
+
+          <div class="field">
+            <label>Member Type</label>
+            <select id="operatorMemberType">
+              <option value="Paid Member">Paid Member</option>
+              <option value="Visitor">Visitor</option>
+            </select>
+          </div>
+
+          <div class="field" id="operatorSeatField">
+            <label>Seat Number</label>
+            <input id="operatorSeatNumber" type="text" inputmode="numeric" placeholder="Enter seat number">
+          </div>
+
+          <input id="operatorFiles" type="file" multiple accept="image/*,video/*">
+          <br><br>
+          <button id="uploadOperatorMedia">Upload Selected Media</button>
+          <div id="operatorUploadStatus" class="status">Select media to upload.</div>
+          <div id="operatorMedia" class="list"></div>
+          <hr style="border-color:#29455c">
+          <h3>Manual Name Slide</h3>
+          <div class="field"><label>Name</label><input id="nameSlideName"></div>
+          <div class="field"><label>Company / Designation</label><input id="nameSlideCompany"></div>
+          <div class="field"><label>Mobile Number</label><input id="nameSlideMobile" type="tel" inputmode="numeric" maxlength="15" placeholder="Enter mobile number"></div>
+          <button id="createNameSlide" type="button">Create Local Slide</button>
+        </section>
+      </div>
+
+      <section class="panel">
+        <h3>Guest Presentations <span id="guestCount" class="small"></span></h3>
+         <input id="localVideoFile" type="file" accept="video/*" style="display:none">
+
+         <div class="field"><input id="guestSearch" type="search" placeholder="Search guest presentations by name, company, seat or slide..."></div>
+        <div class="guestListWrap">
+          <div class="guest head"><div>Seat</div><div>Name</div><div>Company</div><div>Mobile</div><div>Type</div><div>Slide</div><div>Actions</div></div>
+          <div id="guestList" class="list"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Local Playlist / Project Folder</h3>
+        <div class="toolbar">
+          <input id="folderFiles" type="file" webkitdirectory directory multiple>
+          <button id="loadFolder" class="secondary">Load Project Folder</button>
+          <button id="previous" class="secondary">Previous</button>
+          <button id="next" class="secondary">Next</button>
+          <button id="autoLoop" class="secondary">Auto Loop: OFF</button>
+        </div>
+        <div id="playlist" class="list"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================
+   LOCAL PROJECTOR CORE
+   This section never depends on Supabase.
+   ========================= */
+var screen2 = null;
+var localPlaylist = [];
+var playlistIndex = -1;
+var autoLoop = false;
+var meeting = null;
+var mediaRows = [];
+  var guestRows = [];
+
+function $(id){ return document.getElementById(id); }
+
+function setStatus(el, text, good){
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'status ' + (good === true ? 'ok' : good === false ? 'bad' : '');
+}
+
+function escapeHtml(value){
+  return String(value == null ? '' : value).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];
+  });
+}
+
+function mediaType(name){
+  return /\.(mp4|webm|ogg|mov|m4v)$/i.test(name) ? 'video' : 'image';
+}
+
+var lastScreenData = null;
+var screenChannel = null;
+var isScreenMode = new URLSearchParams(window.location.search).get('screen') === '2';
+
+function renderProjectorDocument(doc,data){
+  if(!doc)return;
+
+  var body=doc.body;
+  if(!body){
+    try{
+      doc.open();
+      doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Vaspire Projector</title></head><body></body></html>');
+      doc.close();
+      body=doc.body;
+    }catch(e){return;}
+  }
+  if(!body)return;
+
+  body.innerHTML='';
+  body.style.cssText='margin:0;background:#000;width:100vw;height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center';
+
+  if(!data || data.type==='CLEAR'){
+    var wait=doc.createElement('div');
+    wait.textContent='Vaspire Projector — Waiting';
+    wait.style.cssText='color:#fff;font:24px Arial;text-align:center';
+    body.appendChild(wait);
+    return;
+  }
+
+  if(data.mediaType==='video'){
+    var video=doc.createElement('video');
+    video.src=data.url;
+    video.autoplay=true;
+    video.controls=false;
+    video.playsInline=true;
+    video.muted=false;
+    video.style.cssText='width:100vw;height:100vh;object-fit:contain;background:#000';
+    body.appendChild(video);
+    var promise=video.play();
+    if(promise && promise.catch)promise.catch(function(){
+      video.muted=true;
+      video.play().catch(function(){});
+    });
+  }else{
+    var img=doc.createElement('img');
+    img.src=data.url;
+    img.alt=data.title||'';
+    img.style.cssText='width:100vw;height:100vh;object-fit:contain;background:#000';
+    img.onerror=function(){
+      body.innerHTML='';
+      var err=doc.createElement('div');
+      err.textContent='Unable to load projector image';
+      err.style.cssText='color:#fff;font:24px Arial;text-align:center';
+      body.appendChild(err);
+    };
+    body.appendChild(img);
+  }
+}
+
+function saveScreenState(data){
+  try{
+    if(data && data.type==='PLAY'){
+      localStorage.setItem('vaspire_projector_state',JSON.stringify(data));
+      lastScreenData=data;
+    }else{
+      localStorage.removeItem('vaspire_projector_state');
+      lastScreenData=null;
+    }
+  }catch(e){}
+}
+
+function broadcastScreen(data){
+  saveScreenState(data);
+
+  if(screenChannel){
+    try{screenChannel.postMessage(data);}catch(e){}
+  }
+
+  /* Keep legacy direct popup support as a fallback. */
+  if(screen2 && !screen2.closed && !isScreenMode){
+    try{
+      if(screen2.location.href.indexOf('?screen=2')<0){
+        var u=new URL(window.location.href);
+        u.search='';
+        u.hash='';
+        u.searchParams.set('screen','2');
+        screen2.location.href=u.href;
+      }
+    }catch(e){}
+  }
+}
+
+function renderScreen2(data){
+  broadcastScreen(data);
+}
+
+function showLocal(url,type,title){
+  var box=$('preview');
+  if(!box)return;
+
+  box.innerHTML='';
+  var data={type:'PLAY',url:url,mediaType:type,title:title||''};
+
+  if(type==='video'){
+    var v=document.createElement('video');
+    v.src=url;
+    v.controls=true;
+    v.autoplay=true;
+    v.playsInline=true;
+    box.appendChild(v);
+  }else{
+    var img=document.createElement('img');
+    img.src=url;
+    img.alt=title||'';
+    box.appendChild(img);
+  }
+
+  lastScreenData=data;
+  broadcastScreen(data);
+}
+
+function clearLocal(){
+  $('preview').innerHTML='<div class="empty">No slide selected</div>';
+  broadcastScreen({type:'CLEAR'});
+}
+
+function openScreen2(){
+  var u=new URL(window.location.href);
+  u.search='';
+  u.hash='';
+  u.searchParams.set('screen','2');
+
+  if(screen2 && !screen2.closed){
+    try{
+      if(screen2.location.href!==u.href)screen2.location.href=u.href;
+      screen2.focus();
+      return;
+    }catch(e){}
+  }
+
+  screen2=window.open(u.href,'vaspireScreen','width=1280,height=720,left=1200,top=0');
+  if(!screen2){
+    alert('Screen 2 could not open. Please allow pop-ups for this website.');
+    return;
+  }
+}
+
+function sendToScreen2(data){
+  broadcastScreen(data);
+}
+
+function initScreenMode(){
+  if(!isScreenMode)return;
+
+  document.body.classList.add('screen-mode');
+  screenChannel=new BroadcastChannel('vaspire-projector-screen');
+
+  screenChannel.onmessage=function(e){
+    if(e.data && e.data.type==='PLAY'){
+      lastScreenData=e.data;
+      renderProjectorDocument(document,e.data);
+    }else if(e.data && e.data.type==='CLEAR'){
+      lastScreenData=null;
+      renderProjectorDocument(document,{type:'CLEAR'});
+    }
+  };
+
+  window.addEventListener('storage',function(e){
+    if(e.key!=='vaspire_projector_state')return;
+    if(!e.newValue){
+      renderProjectorDocument(document,{type:'CLEAR'});
+      return;
+    }
+    try{
+      var data=JSON.parse(e.newValue);
+      lastScreenData=data;
+      renderProjectorDocument(document,data);
+    }catch(err){}
+  });
+
+  var saved=null;
+  try{saved=JSON.parse(localStorage.getItem('vaspire_projector_state')||'null');}catch(e){}
+
+  if(saved && saved.type==='PLAY'){
+    lastScreenData=saved;
+    renderProjectorDocument(document,saved);
+  }else{
+    renderProjectorDocument(document,{type:'CLEAR'});
+  }
+}
+
+function loadLocalFolder(){
+  var files=Array.prototype.slice.call($('folderFiles').files || []);
+  localPlaylist=files.filter(function(f){
+    return f.type.indexOf('image/')===0 || f.type.indexOf('video/')===0;
+  });
+  playlistIndex=-1;
+  renderPlaylist();
+}
+
+function renderPlaylist(){
+  var box=$('playlist');
+  if(!localPlaylist.length){
+    box.innerHTML='<div class="small">No local files loaded.</div>';
+    return;
+  }
+  box.innerHTML=localPlaylist.map(function(f,i){
+    return '<div class="item"><span class="name">'+(i+1)+'. '+escapeHtml(f.name)+'</span><button class="secondary" data-local-index="'+i+'">Play</button></div>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('[data-local-index]'),function(btn){
+    btn.addEventListener('click',function(){
+      playLocal(Number(btn.getAttribute('data-local-index')));
+    });
+  });
+}
+
+function playLocal(i){
+  if(!localPlaylist.length) return;
+  if(i<0) i=localPlaylist.length-1;
+  if(i>=localPlaylist.length) i=0;
+  playlistIndex=i;
+  var f=localPlaylist[i];
+  showLocal(URL.createObjectURL(f), f.type.indexOf('video/')===0?'video':'image', f.name);
+}
+
+async function createLocalNameSlide(){
+  if(!db){
+    alert('Supabase is not connected.');
+    return;
+  }
+  if(!meeting){
+    alert('Select a meeting first.');
+    return;
+  }
+
+  var n=$('nameSlideName').value.trim();
+  var c=$('nameSlideCompany').value.trim();
+  var mobile=$('nameSlideMobile').value.trim();
+
+  if(!n){
+    alert('Enter the name.');
+    $('nameSlideName').focus();
+    return;
+  }
+  if(!mobile){
+    alert('Enter the mobile number.');
+    $('nameSlideMobile').focus();
+    return;
+  }
+  if(!/^[0-9+()\-\s]{7,15}$/.test(mobile)){
+    alert('Enter a valid mobile number.');
+    $('nameSlideMobile').focus();
+    return;
+  }
+
+  var btn=$('createNameSlide');
+  btn.disabled=true;
+  btn.textContent='Creating Slide…';
+  setStatus($('operatorUploadStatus'),'Creating local guest slide…',undefined);
+
+  var guestId=null;
+  var storagePath=null;
+
+  try{
+    /* Create a clean 16:9 slide. */
+    var safeName=escapeHtml(n);
+    var safeCompany=escapeHtml(c);
+    var safeMobile=escapeHtml(mobile);
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080">'
+      +'<rect width="1920" height="1080" fill="#07111f"/>'
+      +'<text x="960" y="410" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="82" font-weight="700">'+safeName+'</text>'
+      +(c?'<text x="960" y="515" text-anchor="middle" fill="#13b8a6" font-family="Arial,sans-serif" font-size="44">'+safeCompany+'</text>':'')
+      +'<text x="960" y="610" text-anchor="middle" fill="#9debe0" font-family="Arial,sans-serif" font-size="38">'+safeMobile+'</text>'
+      +'</svg>';
+
+    /* First create the guest record so the presentation is linked to it. */
+    var gi=await db.from('guests').insert({
+      meeting_id:meeting.id,
+      name:n,
+      company_name:c,
+      member_type:'Visitor',
+      seat_number:null
+    }).select('*').single();
+
+    if(gi.error) throw new Error('Guest record: '+gi.error.message);
+    guestId=gi.data.id;
+
+    /* Save mobile if the existing guests table has a compatible column. */
+    var mobileColumn=null;
+    ['mobile_number','mobile','phone','phone_number'].some(function(k){
+      if(Object.prototype.hasOwnProperty.call(gi.data,k)){mobileColumn=k;return true;}
+      return false;
+    });
+    if(mobileColumn){
+      var mu={}; mu[mobileColumn]=mobile;
+      var mr=await db.from('guests').update(mu).eq('id',guestId);
+      if(mr.error) console.warn('Could not save mobile number:',mr.error.message);
+    }
+
+    /*
+     * Convert the SVG to PNG before uploading.
+     * Supabase Storage in this project rejects image/svg+xml, so the
+     * browser renders the SVG onto a canvas and uploads a normal PNG.
+     */
+    var pngBlob=await new Promise(function(resolve,reject){
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var canvas=document.createElement('canvas');
+          canvas.width=1920;
+          canvas.height=1080;
+          var ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,1920,1080);
+          canvas.toBlob(function(blob){
+            if(blob) resolve(blob);
+            else reject(new Error('Could not convert slide to PNG.'));
+          },'image/png');
+        }catch(e){reject(e);}
+      };
+      img.onerror=function(){reject(new Error('Could not render the local slide.'));};
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    });
+
+    storagePath=meeting.id+'/local-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.png';
+    var up=await db.storage.from('guest-slides').upload(storagePath,pngBlob,{contentType:'image/png',upsert:false});
+    if(up.error) throw new Error('Slide upload: '+up.error.message);
+
+    var pub=db.storage.from('guest-slides').getPublicUrl(storagePath).data.publicUrl;
+    var fileName=n.replace(/[^a-zA-Z0-9._-]/g,'_')+' - Local Slide.png';
+
+    /* This is the critical insert: guest_id links it into Guest Presentations. */
+    var pi=await db.from('presentations').insert({
+      meeting_id:meeting.id,
+      guest_id:guestId,
+      file_name:fileName,
+      file_url:pub,
+      status:'ready'
+    }).select('*').single();
+
+    if(pi.error) throw new Error('Presentation record: '+pi.error.message);
+
+    /* Immediately show it locally and refresh the Guest Presentations list. */
+    showLocal(pub,'image',fileName);
+    await loadGuests();
+
+    $('nameSlideName').value='';
+    $('nameSlideCompany').value='';
+    $('nameSlideMobile').value='';
+
+    setStatus($('operatorUploadStatus'),'Local guest slide created and added to Guest Presentations.',true);
+  }catch(err){
+    console.error('Create Local Slide:',err);
+    if(storagePath){
+      try{await db.storage.from('guest-slides').remove([storagePath]);}catch(e){}
+    }
+    if(guestId){
+      try{await db.from('guests').delete().eq('id',guestId);}catch(e){}
+    }
+    setStatus($('operatorUploadStatus'),'Could not create local slide: '+(err.message||err),false);
+    alert('Could not create local slide.\n\n'+(err.message||err));
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Create Local Slide';
+  }
+}
+
+function initLocal(){
+  $('openScreen').addEventListener('click',openScreen2);
+  $('fullscreen').addEventListener('click',function(){
+    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  });
+  $('clearPreview').addEventListener('click',clearLocal);
+  $('stopLive').addEventListener('click',clearLocal);
+  $('loadFolder').addEventListener('click',loadLocalFolder);
+  $('previous').addEventListener('click',function(){
+    if(localPlaylist.length) playLocal(playlistIndex-1);
+  });
+  $('next').addEventListener('click',function(){
+    if(localPlaylist.length) playLocal(playlistIndex+1);
+  });
+  $('autoLoop').addEventListener('click',function(){
+    autoLoop=!autoLoop;
+    $('autoLoop').textContent='Auto Loop: '+(autoLoop?'ON':'OFF');
+  });
+  $('createNameSlide').addEventListener('click',createLocalNameSlide);
+  $('folderFiles').addEventListener('change',function(){
+    if($('folderFiles').files.length) loadLocalFolder();
+  });
+  setStatus($('appStatus'),'Local projector controls ready. Connecting to Supabase…',true);
+}
+
+/* =========================
+   SUPABASE MODULE
+   Loaded dynamically so local buttons work even if CDN fails.
+   ========================= */
+var db=null;
+var realtimeChannel=null;
+  var guestPollTimer=null;
+  var localVideoTarget=null;
+  var localVideoObjectUrl=null;
+  var SELECTED_MEETING_KEY='vaspire_selected_meeting_id';
+
+var SUPABASE_URL='https://zhufcryqamaubxjorjgm.supabase.co';
+var SUPABASE_KEY='sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN';
+
+function loadSupabase(){
+  if(window.supabase && window.supabase.createClient){
+    startSupabase();
+    return;
+  }
+  var s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  s.onload=function(){ startSupabase(); };
+  s.onerror=function(){
+    setStatus($('appStatus'),'Supabase library could not load. Local projector functions are still available.',false);
+  };
+  document.head.appendChild(s);
+}
+
+async function startSupabase(){
+  try{
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    var test=await db.from('meetings').select('id',{count:'exact',head:true});
+    if(test.error) throw test.error;
+    setStatus($('appStatus'),'Supabase connected. All meeting controls are ready.',true);
+    bindSupabaseButtons();
+    await loadMeetings();
+  }catch(err){
+    console.error('Supabase:',err);
+    setStatus($('appStatus'),'Supabase connection/table error: '+(err.message||err)+'. Local projector functions remain active.',false);
+  }
+}
+
+function bindSupabaseButtons(){
+  $('createMeeting').addEventListener('click',createMeeting);
+  $('copyLink').addEventListener('click',copyGuestLink);
+  $('toggleUploads').addEventListener('click',toggleGuestUploads);
+  $('uploadOperatorMedia').addEventListener('click',uploadOperatorMedia);
+  $('operatorMemberType').addEventListener('change',updateOperatorSeatField);
+  $('meetingSelect').addEventListener('change',function(){
+    var id=this.value;
+    if(id) selectMeeting(id);
+  });
+  updateOperatorSeatField();
+  $('guestSearch').addEventListener('input',renderGuestList);
+
+  $('localVideoFile').addEventListener('change',function(){
+    var file=this.files && this.files[0];
+    if(file) playSelectedLocalVideo(file);
+  });
+}
+
+/* Existing meetings schema uses `title`, not `name`.
+   Columns: id, code, title, active, created_at, meeting_date, guest_upload_enabled. */
+async function createMeeting(){
+  if(!db){alert('Supabase is not connected.');return;}
+  var name=$('meetingName').value.trim();
+  if(!name){alert('Enter meeting name.');return;}
+  var r=await db.from('meetings').insert({
+    title:name,
+    meeting_date:$('meetingDate').value||null,
+    guest_upload_enabled:$('guestEnabled').checked,
+    active:false
+  }).select().single();
+  if(r.error){alert(r.error.message);return;}
+  await selectMeeting(r.data.id);
+}
+
+async function loadMeetings(){
+  var r=await db.from('meetings').select('*').order('meeting_date',{ascending:false});
+  if(r.error){setStatus($('meetingStatus'),r.error.message,false);return;}
+
+  var rows=r.data||[];
+  var activeMeeting=rows.find(function(m){return m.active===true;})||null;
+
+  $('meetingSelect').innerHTML='<option value="">Select a meeting</option>'+rows.map(function(m){
+    return '<option value="'+m.id+'">'+escapeHtml(m.title)+(m.active?' — ACTIVE':'')+'</option>';
+  }).join('');
+
+  if(meeting) $('meetingSelect').value=meeting.id;
+
+  /* Restore the last selected meeting after page refresh. */
+  if(!meeting){
+    var savedMeetingId=null;
+    try{ savedMeetingId=localStorage.getItem(SELECTED_MEETING_KEY); }catch(e){}
+    if(savedMeetingId && rows.some(function(m){return String(m.id)===String(savedMeetingId);})){
+      $('meetingSelect').value=savedMeetingId;
+      selectMeeting(savedMeetingId);
+      return;
+    }
+  }
+
+  $('meetingList').innerHTML=rows.map(function(m){
+    var selected=meeting && meeting.id===m.id;
+    return '<div class="meeting '+(selected?'active':'')+'" data-meeting-id="'+m.id+'">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'
+      +'<div style="min-width:0;flex:1">'
+      +'<b>'+escapeHtml(m.title)+'</b>'
+      +'<div class="small">'+escapeHtml(m.meeting_date||'No date')+' · '+(m.guest_upload_enabled?'Uploads ON':'Uploads OFF')+'</div>'
+      +(m.active?'<div class="small" style="color:#13b8a6;font-weight:800;margin-top:4px">● ACTIVE MEETING</div>':'')
+      +'</div>'
+      +'<div class="actions">'
+      +(m.active?'<button type="button" disabled>ACTIVE</button>':'<button type="button" class="secondary" data-active-meeting="'+m.id+'">MAKE ACTIVE</button>')
+      +'<button type="button" class="danger" data-delete-meeting="'+m.id+'">Delete</button>'
+      +'</div>'
+      +'</div></div>';
+  }).join('') || '<div class="small">No meetings.</div>';
+
+  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-meeting-id]'),function(el){
+    el.addEventListener('click',function(e){
+      if(e.target && e.target.closest('[data-delete-meeting]')) return;
+      if(e.target && e.target.closest('[data-active-meeting]')) return;
+      selectMeeting(el.getAttribute('data-meeting-id'));
+    });
+  });
+
+  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-active-meeting]'),function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      setActiveMeeting(btn.getAttribute('data-active-meeting'));
+    });
+  });
+
+  Array.prototype.forEach.call($('meetingList').querySelectorAll('[data-delete-meeting]'),function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      deleteMeeting(btn.getAttribute('data-delete-meeting'));
+    });
+  });
+
+  if(activeMeeting){
+    $('activeMeetingStatus').textContent='Active meeting: '+activeMeeting.title;
+    $('activeUploadMeeting').textContent='Local media will upload to: '+activeMeeting.title;
+  }else{
+    $('activeMeetingStatus').textContent='No active meeting.';
+    $('activeUploadMeeting').textContent='No active meeting. Local upload is disabled.';
+  }
+
+  if(!$('meetingSelect').value && activeMeeting){
+    $('meetingSelect').value=activeMeeting.id;
+  }
+}
+async function selectMeeting(id){
+  var r=await db.from('meetings').select('*').eq('id',id).single();
+  if(r.error){alert(r.error.message);return;}
+  meeting=r.data;
+
+  try{ localStorage.setItem(SELECTED_MEETING_KEY,String(meeting.id)); }catch(e){}
+
+  $('meetingSelect').value=meeting.id;
+
+  setStatus($('meetingStatus'),meeting.title+' · '+(meeting.meeting_date||'No date')+' · '+(meeting.active?'● ACTIVE MEETING · ':'')+(meeting.guest_upload_enabled?'UPLOADS ENABLED':'UPLOADS DISABLED'),true);
+  $('guestEnabled').checked=!!meeting.guest_upload_enabled;
+  $('toggleUploads').textContent=meeting.guest_upload_enabled?'Disable Uploads':'Enable Uploads';
+  makeGuestLink();
+  await loadGuests();
+  await loadOperatorMedia();
+  subscribe();
+  startGuestPolling();
+  await loadMeetings();
+
+  var active=await db.from('meetings').select('id,title').eq('active',true).maybeSingle();
+  if(!active.error && active.data){
+    $('activeUploadMeeting').textContent='Local media will upload to: '+active.data.title;
+    $('activeMeetingStatus').textContent='Active meeting: '+active.data.title;
+  }else{
+    $('activeUploadMeeting').textContent='No active meeting. Local upload is disabled.';
+    $('activeMeetingStatus').textContent='No active meeting.';
+  }
+}
+async function setActiveMeeting(id){
+  if(!db)return alert('Supabase is not connected.');
+  var r=await db.from('meetings').select('*').eq('id',id).single();
+  if(r.error){alert(r.error.message);return;}
+  if(!confirm('Make "'+r.data.title+'" the active meeting?'))return;
+
+  setStatus($('meetingStatus'),'Changing active meeting…',undefined);
+
+  var clear=await db.from('meetings').update({active:false}).eq('active',true);
+  if(clear.error){alert('Could not clear current active meeting: '+clear.error.message);return;}
+
+  var make=await db.from('meetings').update({active:true}).eq('id',id);
+  if(make.error){alert('Could not activate meeting: '+make.error.message);return;}
+
+  await selectMeeting(id);
+}
+
+function updateOperatorSeatField(){
+  var paid=$('operatorMemberType').value==='Paid Member';
+  $('operatorSeatField').style.display=paid?'block':'none';
+  $('operatorSeatNumber').required=paid;
+  if(!paid)$('operatorSeatNumber').value='';
+}
+
+function makeGuestLink(){
+  if(!meeting){
+    $('guestUrl').textContent='';
+    $('qr').innerHTML='';
+    $('uploadStatus').textContent='Select a meeting.';
+    return;
+  }
+
+  /* QR always points to the dedicated guest upload page. */
+  var url = new URL('/guest.html', window.location.origin);
+  url.searchParams.set('meeting', meeting.id);
+  var guestUrl = url.href;
+
+  $('guestUrl').textContent=guestUrl;
+  $('qr').innerHTML='';
+
+  var img=document.createElement('img');
+  img.width=240;
+  img.height=240;
+  img.alt='Guest Upload QR';
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data='+encodeURIComponent(guestUrl);
+  img.onerror=function(){
+    $('qr').innerHTML='<div style="padding:20px;color:#111;font-weight:800;text-align:center">QR service unavailable.<br>Use the guest link below.</div>';
+  };
+  $('qr').appendChild(img);
+
+  $('uploadStatus').textContent=meeting.guest_upload_enabled
+    ? 'Guest uploads ENABLED'
+    : 'Guest uploads DISABLED';
+
+  $('toggleUploads').textContent=meeting.guest_upload_enabled
+    ? 'Disable Uploads'
+    : 'Enable Uploads';
+}
+async function copyGuestLink(){
+  var text=$('guestUrl').textContent;
+  if(!text)return alert('Select a meeting first.');
+  try{await navigator.clipboard.writeText(text);alert('Guest link copied.');}
+  catch(e){prompt('Copy guest link:',text);}
+}
+
+async function toggleGuestUploads(){
+  if(!meeting)return alert('Select a meeting first.');
+  var value=!meeting.guest_upload_enabled;
+  var r=await db.from('meetings').update({guest_upload_enabled:value}).eq('id',meeting.id);
+  if(r.error){alert(r.error.message);return;}
+  meeting.guest_upload_enabled=value;
+  makeGuestLink();
+  $('toggleUploads').textContent=value?'Disable Uploads':'Enable Uploads';
+  await loadMeetings();
+}
+
+async function deleteMeeting(id){
+  if(!db)return alert('Supabase is not connected.');
+
+  var lookup=await db.from('meetings').select('*').eq('id',id).single();
+  if(lookup.error){alert(lookup.error.message);return;}
+  var target=lookup.data;
+
+  var warning='WARNING: Delete this meeting permanently?\\n\\n'
+    +'Meeting: '+target.title+'\\n'
+    +'Date: '+(target.meeting_date||'No date')+'\\n\\n'
+    +'This will remove the meeting, guest records, presentations and operator media records.\\n'
+    +'This action cannot be undone.';
+
+  if(!confirm(warning))return;
+
+  var typed=prompt('Type DELETE to confirm permanent deletion of "'+target.title+'".');
+  if(typed!=='DELETE'){
+    alert('Deletion cancelled.');
+    return;
+  }
+
+  setStatus($('meetingStatus'),'Deleting meeting…',undefined);
+
+  /* Best-effort Storage cleanup. Database deletion below remains authoritative. */
+  try{
+    var prs=await db.from('presentations').select('file_url').eq('meeting_id',id);
+    if(!prs.error){
+      var guestPaths=(prs.data||[]).map(function(x){return storagePathFromPublicUrl(x.file_url,'guest-slides');}).filter(Boolean);
+      if(guestPaths.length)await db.storage.from('guest-slides').remove(guestPaths);
+    }
+  }catch(e){console.warn('Guest storage cleanup:',e);}
+
+  try{
+    var mm=await db.from('meeting_media').select('file_url').eq('meeting_id',id);
+    if(!mm.error){
+      var operatorPaths=(mm.data||[]).map(function(x){return storagePathFromPublicUrl(x.file_url,'meeting-media');}).filter(Boolean);
+      if(operatorPaths.length)await db.storage.from('meeting-media').remove(operatorPaths);
+    }
+  }catch(e){console.warn('Operator storage cleanup:',e);}
+
+  var a=await db.from('presentations').delete().eq('meeting_id',id);
+  if(a.error){alert('Could not delete presentations: '+a.error.message);return;}
+
+  var b=await db.from('guests').delete().eq('meeting_id',id);
+  if(b.error){alert('Could not delete guests: '+b.error.message);return;}
+
+  var c=await db.from('meeting_media').delete().eq('meeting_id',id);
+  if(c.error){alert('Could not delete operator media: '+c.error.message);return;}
+
+  var d=await db.from('meetings').delete().eq('id',id);
+  if(d.error){alert('Could not delete meeting: '+d.error.message);return;}
+
+  if(meeting && meeting.id===id){
+    try{ localStorage.removeItem(SELECTED_MEETING_KEY); }catch(e){}
+    meeting=null;
+    mediaRows=[];
+    lastScreenData=null;
+    broadcastScreen({type:'CLEAR'});
+    $('meetingStatus').textContent='No meeting selected.';
+    $('uploadStatus').textContent='Select a meeting.';
+    $('guestUrl').textContent='';
+    $('qr').innerHTML='';
+    $('guestList').innerHTML='';
+    $('operatorMedia').innerHTML='';
+  }
+
+  await loadMeetings();
+  alert('Meeting deleted successfully.');
+}
+
+function storagePathFromPublicUrl(url,bucket){
+  if(!url)return null;
+  try{
+    var marker='/storage/v1/object/public/'+bucket+'/';
+    var i=String(url).indexOf(marker);
+    if(i<0)return null;
+    return decodeURIComponent(String(url).slice(i+marker.length));
+  }catch(e){return null;}
+}
+
+async function loadGuests(){
+  var r=await db.from('guests').select('*,presentations(*)').eq('meeting_id',meeting.id);
+  if(r.error){$('guestList').innerHTML='<div class="small">'+escapeHtml(r.error.message)+'</div>';return;}
+  guestRows=(r.data||[]).sort(function(a,b){
+    var am=a.member_type==='Paid Member',bm=b.member_type==='Paid Member';
+    if(am!==bm)return am?-1:1;
+    if(am)return (Number(a.seat_number)||999999)-(Number(b.seat_number)||999999);
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+  renderGuestList();
+}
+
+function renderGuestList(){
+  var rows=guestRows.slice();
+  var q=(($('guestSearch')&&$('guestSearch').value)||'').trim().toLowerCase();
+
+  if(q) rows=rows.filter(function(g){
+    var ps=g.presentations||[];
+    return [g.name,g.company_name,g.mobile_number,g.mobile,g.phone,g.phone_number,g.member_type,g.seat_number,
+      ps.map(function(p){return p.file_name;}).join(' ')].join(' ').toLowerCase().indexOf(q)!==-1;
+  });
+
+  $('guestCount').textContent='('+rows.length+(q?' / '+guestRows.length:'')+')';
+
+  $('guestList').innerHTML=rows.map(function(g){
+    var ps=(g.presentations||[]).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
+    var p=ps[0];
+    var guestMobile=g.mobile_number||g.mobile||g.phone||g.phone_number||'';
+    return '<div class="guest"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+'</div><div>'+escapeHtml(g.company_name)+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
+  }).join('') || '<div class="empty" style="padding:30px">'+(q?'No matching guest presentations.':'No guest slides.')+'</div>';
+
+  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-preview-id]'),function(b){
+    b.addEventListener('click',function(){previewPresentation(b.getAttribute('data-preview-id'));});
+  });
+  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-play-id]'),function(b){
+    b.addEventListener('click',function(){playPresentation(b.getAttribute('data-play-id'));});
+  });
+  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-delete-presentation]'),function(b){
+    b.addEventListener('click',function(){deleteGuestPresentation(b.getAttribute('data-delete-presentation'));});
+  });
+
+  Array.prototype.forEach.call($('guestList').querySelectorAll('[data-local-video-id]'),function(b){
+    b.addEventListener('click',function(){
+      localVideoTarget=b.getAttribute('data-local-video-id');
+      $('localVideoFile').value='';
+      $('localVideoFile').click();
+    });
+  });
+}
+
+function playSelectedLocalVideo(file){
+  if(!file)return;
+
+  if(file.type.indexOf('video/')!==0){
+    alert('Please select a video file.');
+    return;
+  }
+
+  if(localVideoObjectUrl){
+    try{URL.revokeObjectURL(localVideoObjectUrl);}catch(e){}
+  }
+
+  localVideoObjectUrl=URL.createObjectURL(file);
+
+  /*
+   * The video is NOT uploaded to Supabase.
+   * It is read directly from the local PC and played in the browser.
+   * This avoids waiting for a large upload and avoids storage limits.
+   */
+  showLocal(localVideoObjectUrl,'video',file.name);
+
+  setStatus(
+    $('operatorUploadStatus'),
+    'Playing local video from this PC: '+file.name+' (not uploaded)',
+    true
+  );
+}
+
+async function deleteGuestPresentation(id){
+  if(!db)return alert('Supabase is not connected.');
+  var r=await db.from('presentations').select('*').eq('id',id).single();
+  if(r.error){alert(r.error.message);return;}
+  var p=r.data;
+  if(!confirm('Delete guest media "'+p.file_name+'"?'))return;
+
+  var path=storagePathFromPublicUrl(p.file_url,'guest-slides');
+  if(path){
+    var sr=await db.storage.from('guest-slides').remove([path]);
+    if(sr.error)console.warn('Guest storage delete:',sr.error);
+  }
+
+  var d=await db.from('presentations').delete().eq('id',id);
+  if(d.error){alert('Could not delete guest media: '+d.error.message);return;}
+
+  if(lastScreenData && lastScreenData.url===p.file_url)broadcastScreen({type:'CLEAR'});
+  await loadGuests();
+}
+
+async function previewPresentation(id){
+  var r=await db.from('presentations').select('*').eq('id',id).single();
+  if(r.error){alert(r.error.message);return;}
+  showLocal(r.data.file_url,mediaType(r.data.file_name),r.data.file_name);
+}
+
+async function playPresentation(id){
+  var r=await db.from('presentations').update({status:'playing',played_at:new Date().toISOString()}).eq('id',id);
+  if(r.error){alert(r.error.message);return;}
+  var p=await db.from('presentations').select('*').eq('id',id).single();
+  if(!p.error) showLocal(p.data.file_url,mediaType(p.data.file_name),p.data.file_name);
+  await loadGuests();
+}
+
+async function loadOperatorMedia(){
+  var r=await db.from('meeting_media').select('*').eq('meeting_id',meeting.id).order('sort_order').order('created_at');
+  if(r.error){$('operatorMedia').innerHTML='<div class="small">'+escapeHtml(r.error.message)+'</div>';return;}
+  mediaRows=r.data||[];
+  renderOperatorMedia();
+}
+
+function renderOperatorMedia(){
+  $('operatorMedia').innerHTML=mediaRows.map(function(m){
+    var classification=escapeHtml(m.member_type||'');
+    if(m.member_type==='Paid Member')classification+=' · Seat '+escapeHtml(m.seat_number||'');
+    return '<div class="item"><span class="name">'+escapeHtml(m.file_name)+'</span><span class="small">'+escapeHtml(m.media_type)+' · '+classification+'</span><button class="secondary" data-media-preview="'+m.id+'">Preview</button><button data-media-play="'+m.id+'">Play</button><button class="danger" data-media-delete="'+m.id+'">Delete</button></div>';
+  }).join('') || '<div class="small">No local media for this meeting.</div>';
+
+  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-preview]'),function(b){
+    b.addEventListener('click',function(){
+      var m=mediaRows.find(function(x){return x.id===b.getAttribute('data-media-preview');});
+      if(m)showLocal(m.file_url,m.media_type,m.file_name);
+    });
+  });
+  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-play]'),function(b){
+    b.addEventListener('click',function(){
+      var m=mediaRows.find(function(x){return x.id===b.getAttribute('data-media-play');});
+      if(m)showLocal(m.file_url,m.media_type,m.file_name);
+    });
+  });
+  Array.prototype.forEach.call($('operatorMedia').querySelectorAll('[data-media-delete]'),function(b){
+    b.addEventListener('click',function(){deleteOperatorMedia(b.getAttribute('data-media-delete'));});
+  });
+}
+
+async function deleteOperatorMedia(id){
+  var m=mediaRows.find(function(x){return x.id===id;});
+  if(!m)return;
+  if(!confirm('Delete local media "'+m.file_name+'"?'))return;
+
+  var path=storagePathFromPublicUrl(m.file_url,'meeting-media');
+  if(path){
+    var sr=await db.storage.from('meeting-media').remove([path]);
+    if(sr.error)console.warn('Operator storage delete:',sr.error);
+  }
+
+  var d=await db.from('meeting_media').delete().eq('id',id);
+  if(d.error){alert(d.error.message);return;}
+  if(lastScreenData && lastScreenData.url===m.file_url)broadcastScreen({type:'CLEAR'});
+  await loadOperatorMedia();
+}
+
+async function uploadOperatorMedia(){
+  if(!db)return alert('Supabase is not connected.');
+
+  var activeResult=await db.from('meetings').select('*').eq('active',true).maybeSingle();
+  if(activeResult.error){alert('Unable to find active meeting: '+activeResult.error.message);return;}
+  if(!activeResult.data){alert('No active meeting. Please make a meeting active before uploading local media.');return;}
+
+  var activeMeeting=activeResult.data;
+  var memberType=$('operatorMemberType').value;
+  var seat=$('operatorSeatNumber').value.trim();
+
+  if(memberType==='Paid Member'){
+    if(!seat){alert('Seat Number is required for Paid Members.');$('operatorSeatNumber').focus();return;}
+    if(!/^[0-9]+$/.test(seat)){alert('Seat Number must contain numbers only.');$('operatorSeatNumber').focus();return;}
+  }else{
+    seat=null;
+  }
+
+  var files=Array.prototype.slice.call($('operatorFiles').files||[]);
+  if(!files.length)return alert('Choose image/video files first.');
+
+  $('operatorUploadStatus').textContent='Uploading to: '+activeMeeting.title;
+
+  var success=0;
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    var safe=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var path=activeMeeting.id+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+safe;
+    var up=await db.storage.from('meeting-media').upload(path,f);
+    if(up.error){alert('Upload failed for '+f.name+': '+up.error.message);continue;}
+
+    var pub=db.storage.from('meeting-media').getPublicUrl(path).data.publicUrl;
+    var ins=await db.from('meeting_media').insert({
+      meeting_id:activeMeeting.id,
+      file_name:f.name,
+      file_url:pub,
+      media_type:f.type.indexOf('video/')===0?'video':'image',
+      sort_order:mediaRows.length+i,
+      member_type:memberType,
+      seat_number:memberType==='Paid Member'?seat:null
+    });
+
+    if(ins.error){
+      alert('Database error for '+f.name+': '+ins.error.message);
+      await db.storage.from('meeting-media').remove([path]);
+    }else{
+      success++;
+    }
+  }
+
+  $('operatorFiles').value='';
+  $('operatorUploadStatus').textContent=success+' file(s) uploaded to: '+activeMeeting.title;
+
+  if(meeting && meeting.id===activeMeeting.id)await loadOperatorMedia();
+  await loadMeetings();
+}
+
+function startGuestPolling(){
+  if(guestPollTimer) clearInterval(guestPollTimer);
+
+  guestPollTimer=setInterval(async function(){
+    if(!db || !meeting || isScreenMode) return;
+
+    try{
+      // Check Supabase every 5 seconds for newly uploaded guest slides.
+      await loadGuests();
+    }catch(e){
+      console.warn('Guest presentation polling:',e);
+    }
+  },5000);
+}
+
+function subscribe(){
+  if(realtimeChannel) db.removeChannel(realtimeChannel);
+  realtimeChannel=db.channel('meeting-'+meeting.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'presentations',filter:'meeting_id=eq.'+meeting.id},function(payload){
+      if(payload.eventType==='UPDATE' && payload.new.status==='playing'){
+        showLocal(payload.new.file_url,mediaType(payload.new.file_name),payload.new.file_name);
+      }
+      loadGuests();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'meeting_media',filter:'meeting_id=eq.'+meeting.id},function(){
+      loadOperatorMedia();
+    })
+    .subscribe();
+}
+
+if(isScreenMode){
+  initScreenMode();
+}else{
+  /* Start local controls FIRST. */
+  initLocal();
+
+  /* Then load Supabase independently. */
+  loadSupabase();
+}
+
+})();
+</script>
+</body>
+</html>
