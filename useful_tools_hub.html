@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vaspire Useful Tools Hub</title>
+<meta name="description" content="A curated dashboard of useful online tools for business, marketing, productivity, development, AI, design, finance and more.">
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#667085;
+  --primary:#2563eb; --primary2:#7c3aed; --border:#e5e7eb;
+  --shadow:0 8px 30px rgba(15,23,42,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{
+  background:linear-gradient(135deg,#172554,#2563eb 55%,#7c3aed);
+  color:#fff;padding:42px 22px 34px;text-align:center;
+}
+header h1{margin:0 0 8px;font-size:34px}
+header p{margin:0;opacity:.9;font-size:16px}
+.wrap{max-width:1250px;margin:auto;padding:22px}
+.search{position:sticky;top:0;z-index:10;background:rgba(245,247,251,.95);padding:14px 0}
+#search{width:100%;padding:15px 18px;border:1px solid var(--border);border-radius:14px;font-size:16px;outline:none;box-shadow:var(--shadow)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 22px}
+.filters button{border:1px solid var(--border);background:#fff;padding:9px 13px;border-radius:999px;cursor:pointer;color:var(--text)}
+.filters button.active,.filters button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.category{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.category h2{font-size:19px;margin:0 0 13px;display:flex;justify-content:space-between;align-items:center}
+.count{font-size:12px;color:var(--muted);font-weight:400}
+.tool{display:flex;gap:11px;padding:10px;border-radius:12px;text-decoration:none;color:inherit;transition:.15s}
+.tool:hover{background:#f0f5ff;transform:translateY(-1px)}
+.icon{width:34px;height:34px;border-radius:10px;background:#eef2ff;display:grid;place-items:center;font-size:17px;flex:none}
+.tool strong{display:block;font-size:14px;margin-bottom:3px}
+.tool span{display:block;font-size:12px;color:var(--muted);line-height:1.35}
+footer{text-align:center;color:var(--muted);padding:35px 20px}
+.hidden{display:none!important}
+.note{margin:0 0 20px;color:var(--muted);font-size:13px}
+@media(max-width:600px){header h1{font-size:27px}.wrap{padding:14px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧰 Useful Tools Hub</h1>
+  <p>Business • Marketing • AI • Development • Design • Productivity • Finance</p>
+</header>
+
+<main class="wrap">
+  <div class="search">
+    <input id="search" type="search" placeholder="🔎 Search tools, e.g. QR, PDF, SEO, AI, image, invoice..." aria-label="Search tools">
+  </div>
+  <div class="filters" id="filters"></div>
+  <p class="note">Click any tool to open it in a new tab. This page contains curated links to popular services; availability and pricing may change.</p>
+  <section class="grid" id="grid"></section>
+</main>
+
+<footer>Useful Tools Hub • Curated for everyday business & digital work</footer>
+
+<script>
+const data = [
+{cat:"AI & ChatGPT",icon:"🤖",items:[
+["ChatGPT","AI assistant for writing, analysis, coding and research","https://chatgpt.com/"],
+["Claude","AI assistant for writing, analysis and coding","https://claude.ai/"],
+["Google Gemini","Google's AI assistant","https://gemini.google.com/"],
+["Microsoft Copilot","AI assistant from Microsoft","https://copilot.microsoft.com/"],
+["Perplexity","AI search and research","https://www.perplexity.ai/"],
+["NotebookLM","AI research and document assistant","https://notebooklm.google.com/"],
+["Hugging Face","AI models, datasets and demos","https://huggingface.co/"],
+["Google AI Studio","Build and test Gemini applications","https://aistudio.google.com/"]
+]},
+{cat:"Business & Productivity",icon:"📊",items:[
+["Google Docs","Online documents","https://docs.google.com/"],
+["Google Sheets","Spreadsheets and calculations","https://sheets.google.com/"],
+["Google Drive","Cloud file storage","https://drive.google.com/"],
+["Google Forms","Forms and data collection","https://forms.google.com/"],
+["Notion","Notes, databases and project management","https://www.notion.so/"],
+["Trello","Boards and task management","https://trello.com/"],
+["Asana","Project and task management","https://asana.com/"],
+["Calendly","Meeting scheduling","https://calendly.com/"],
+["Zapier","Workflow automation","https://zapier.com/"],
+["Canva","Design and business content","https://www.canva.com/"]
+]},
+{cat:"Marketing & SEO",icon:"📣",items:[
+["Google Trends","Search trends and demand research","https://trends.google.com/"],
+["Google Search Console","Website search performance","https://search.google.com/search-console/"],
+["Google Analytics","Website analytics","https://analytics.google.com/"],
+["Google Keyword Planner","Keyword and advertising research","https://ads.google.com/home/tools/keyword-planner/"],
+["Meta Business Suite","Facebook and Instagram management","https://business.facebook.com/"],
+["Bitly","URL shortening and link tracking","https://bitly.com/"],
+["TinyURL","URL shortener","https://tinyurl.com/"],
+["Mailchimp","Email marketing","https://mailchimp.com/"],
+["Ubersuggest","SEO and keyword research","https://neilpatel.com/ubersuggest/"],
+["PageSpeed Insights","Website speed testing","https://pagespeed.web.dev/"]
+]},
+{cat:"Images, Design & Video",icon:"🎨",items:[
+["Canva","Graphics, presentations, social posts","https://www.canva.com/"],
+["Adobe Express","Quick graphic and video creation","https://www.adobe.com/express/"],
+["Remove.bg","Remove image backgrounds","https://www.remove.bg/"],
+["TinyPNG","Compress PNG/JPEG/WebP images","https://tinypng.com/"],
+["Squoosh","Advanced image compression","https://squoosh.app/"],
+["Photopea","Browser-based image editor","https://www.photopea.com/"],
+["Figma","UI/UX and collaborative design","https://www.figma.com/"],
+["CapCut","Online video editor","https://www.capcut.com/"],
+["Unsplash","Free stock photography","https://unsplash.com/"],
+["Pexels","Free stock photos and videos","https://www.pexels.com/"]
+]},
+{cat:"PDF & Document Tools",icon:"📄",items:[
+["Adobe Acrobat Online","PDF tools","https://www.adobe.com/acrobat/online.html"],
+["iLovePDF","Merge, split, compress and convert PDFs","https://www.ilovepdf.com/"],
+["Smallpdf","PDF conversion and editing","https://smallpdf.com/"],
+["PDF24 Tools","Free PDF utilities","https://tools.pdf24.org/"],
+["Google Drive OCR","Extract text from uploaded documents/images","https://drive.google.com/"],
+["OCR.Space","Online OCR","https://ocr.space/"],
+["DocHub","Online PDF editing and signing","https://www.dochub.com/"],
+["SignWell","Electronic signatures","https://www.signwell.com/"]
+]},
+{cat:"QR, Barcode & Generators",icon:"🔳",items:[
+["QR Code Generator","Create QR codes","https://www.qr-code-generator.com/"],
+["QRCode Monkey","Free QR code generator","https://www.qrcode-monkey.com/"],
+["ZXing Decoder","Decode QR/barcodes from images","https://zxing.org/w/decode.jspx"],
+["Barcode Generator","Generate many barcode formats","https://barcode.tec-it.com/"],
+["QR Code API","Developer QR generation tools","https://goqr.me/api/"]
+]},
+{cat:"Web Development",icon:"💻",items:[
+["GitHub","Code hosting and collaboration","https://github.com/"],
+["GitLab","DevOps and code hosting","https://gitlab.com/"],
+["Stack Overflow","Developer Q&A","https://stackoverflow.com/"],
+["CodePen","HTML/CSS/JS playground","https://codepen.io/"],
+["JSFiddle","Online web editor","https://jsfiddle.net/"],
+["Replit","Online coding and deployment","https://replit.com/"],
+["Vercel","Web deployment","https://vercel.com/"],
+["Netlify","Web deployment","https://www.netlify.com/"],
+["Firebase","Google app development platform","https://firebase.google.com/"],
+["Supabase","Open-source backend platform","https://supabase.com/"],
+["Postman","API development and testing","https://www.postman.com/"],
+["Regex101","Regular expression tester","https://regex101.com/"]
+]},
+{cat:"Images, Files & Utilities",icon:"🛠️",items:[
+["CloudConvert","Convert files between formats","https://cloudconvert.com/"],
+["Convertio","Online file converter","https://convertio.co/"],
+["WeTransfer","Send large files","https://wetransfer.com/"],
+["Google Fonts","Free web fonts","https://fonts.google.com/"],
+["WhatFontIs","Identify fonts from images","https://www.whatfontis.com/"],
+["VirusTotal","Check files/URLs for malware indicators","https://www.virustotal.com/"],
+["Have I Been Pwned","Check exposed email accounts","https://haveibeenpwned.com/"]
+]},
+{cat:"Finance & Business",icon:"💰",items:[
+["GST Portal","India GST services","https://www.gst.gov.in/"],
+["Income Tax e-Filing","India income tax portal","https://www.incometax.gov.in/"],
+["MCA","Ministry of Corporate Affairs","https://www.mca.gov.in/"],
+["UDYAM Registration","MSME registration portal","https://udyamregistration.gov.in/"],
+["RBI","Reserve Bank of India","https://www.rbi.org.in/"],
+["Google Finance","Market and financial information","https://www.google.com/finance/"],
+["XE","Currency conversion","https://www.xe.com/"]
+]},
+{cat:"Maps, Travel & Local Business",icon:"📍",items:[
+["Google Maps","Maps, directions and places","https://maps.google.com/"],
+["Google Business Profile","Manage business presence on Google","https://www.google.com/business/"],
+["Google Earth","Explore geographic imagery","https://earth.google.com/"],
+["Rome2Rio","Travel route planning","https://www.rome2rio.com/"],
+["Booking.com","Hotels and accommodation","https://www.booking.com/"],
+["MakeMyTrip","India travel booking","https://www.makemytrip.com/"]
+]},
+{cat:"Communication",icon:"💬",items:[
+["Gmail","Email","https://mail.google.com/"],
+["WhatsApp Web","WhatsApp on desktop","https://web.whatsapp.com/"],
+["Telegram Web","Telegram messaging","https://web.telegram.org/"],
+["Google Meet","Video meetings","https://meet.google.com/"],
+["Zoom","Video meetings","https://zoom.us/"],
+["Microsoft Teams","Meetings and collaboration","https://teams.microsoft.com/"]
+]},
+{cat:"Learning & Research",icon:"📚",items:[
+["Google Scholar","Academic search","https://scholar.google.com/"],
+["Khan Academy","Free learning resources","https://www.khanacademy.org/"],
+["Coursera","Online courses","https://www.coursera.org/"],
+["edX","University and professional courses","https://www.edx.org/"],
+["WolframAlpha","Computational knowledge engine","https://www.wolframalpha.com/"],
+["Internet Archive","Digital library and archive","https://archive.org/"]
+]},
+{cat:"Social Media",icon:"📱",items:[
+["Facebook","Social networking","https://www.facebook.com/"],
+["Instagram","Social media and marketing","https://www.instagram.com/"],
+["LinkedIn","Professional networking","https://www.linkedin.com/"],
+["YouTube","Video publishing and research","https://www.youtube.com/"],
+["X","Social network","https://x.com/"],
+["Pinterest","Visual discovery and marketing","https://www.pinterest.com/"]
+]}
+];
+
+const grid=document.getElementById("grid"), filters=document.getElementById("filters"), search=document.getElementById("search");
+let active="All";
+
+function renderFilters(){
+  filters.innerHTML="";
+  ["All",...data.map(x=>x.cat)].forEach(c=>{
+    const b=document.createElement("button");
+    b.textContent=c; b.className=c===active?"active":"";
+    b.onclick=()=>{active=c;renderFilters();render()};
+    filters.appendChild(b);
+  });
+}
+function render(){
+  const q=search.value.toLowerCase().trim();
+  grid.innerHTML="";
+  data.filter(c=>active==="All"||c.cat===active).forEach(c=>{
+    const matches=c.items.filter(x=>(x[0]+" "+x[1]).toLowerCase().includes(q));
+    if(!matches.length)return;
+    const box=document.createElement("div"); box.className="category";
+    box.innerHTML=`<h2>${c.icon} ${c.cat}<span class="count">${matches.length} tools</span></h2>`;
+    matches.forEach(x=>{
+      const a=document.createElement("a"); a.className="tool"; a.href=x[2]; a.target="_blank"; a.rel="noopener noreferrer";
+      a.innerHTML=`<div class="icon">↗</div><div><strong>${x[0]}</strong><span>${x[1]}</span></div>`;
+      box.appendChild(a);
+    });
+    grid.appendChild(box);
+  });
+}
+search.addEventListener("input",render);
+renderFilters(); render();
+</script>
+</body>
+</html>
