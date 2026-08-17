@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>TG OILFED Farmer QR Assignment - v5.6-SINGLELINE-QR-FIX-2026-08-17</title>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17251d}
+.wrap{max-width:760px;margin:auto;padding:14px}
+.header{background:#0c4b2a;color:#fff;border-radius:18px;padding:20px;margin-bottom:15px}
+.header h1{margin:0 0 7px;font-size:22px}
+.version{display:inline-block;background:#fff;color:#0c4b2a;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:15px;box-shadow:0 4px 18px #0001}
+label{display:block;font-weight:700;margin-bottom:7px}
+input,button{width:100%;padding:13px;border-radius:10px;font-size:16px}
+input{border:1px solid #cbd7cf;background:#fff}
+button{border:0;background:#0c8a4b;color:#fff;font-weight:700;margin-top:10px}
+button.secondary{background:#e7eee9;color:#16452d}
+button:disabled{opacity:.5}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.status{padding:12px;border-radius:10px;background:#eef4ef;line-height:1.45;word-break:break-word}
+.status.ok{background:#e8f7ed;color:#126b36}
+.status.err{background:#fdecec;color:#9d1c1c}
+.status.info{background:#edf4ff;color:#1f4e8c}
+#reader{width:100%;background:#111;border-radius:14px;overflow:hidden;margin-top:12px;min-height:30px}
+#reader video{width:100%!important;border-radius:14px}
+.data{display:grid;grid-template-columns:150px 1fr;gap:9px 12px}
+.key{font-weight:700;color:#496055}
+.raw{background:#f5f7f6;border-radius:10px;padding:11px;white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:12px}
+.small{font-size:12px;color:#607268;line-height:1.5}
+.counts{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
+.count{background:#f4f7f5;border-radius:10px;padding:10px;text-align:center}
+.count b{display:block;font-size:22px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid #e5ebe7;text-align:left}
+
+.report-row{border:1px solid #dfe8e2;border-radius:12px;margin:9px 0;overflow:hidden;background:#fff}
+.report-head{display:grid;grid-template-columns:1fr 90px 110px;gap:10px;align-items:center;padding:13px;cursor:pointer;background:#f5f8f6}
+.report-head:hover{background:#edf4ef}
+.report-farmer{font-weight:800;color:#16452d}
+.report-count{text-align:center;font-weight:800;font-size:18px}
+.report-toggle{text-align:right;font-weight:700;color:#0c8a4b}
+.report-details{display:none;padding:10px 13px 13px;background:#fbfcfb}
+.report-details.open{display:block}
+.report-detail{padding:10px 0;border-bottom:1px solid #e6ece8}
+.report-detail:last-child{border-bottom:0}
+.report-detail-grid{display:grid;grid-template-columns:110px 1fr;gap:5px 10px;font-size:13px}
+.report-label{font-weight:700;color:#607268}
+.report-toolbar{display:grid;grid-template-columns:1fr 130px;gap:10px}
+.report-total{font-weight:700;color:#16452d;padding:10px 0}
+@media(max-width:520px){
+ .row{grid-template-columns:1fr}
+ .data{grid-template-columns:1fr}
+ .counts{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="header">
+<h1>TG OILFED OIL PALM NURSERY</h1>
+<div>Farmer ID → Sapling QR Assignment</div>
+<div class="version">VERSION v5.6-SINGLELINE-QR-FIX-2026-08-17</div>
+</div>
+
+<div class="card">
+<label for="farmerId">Farmer ID</label>
+<input id="farmerId" placeholder="Enter Farmer ID" autocomplete="off">
+<div class="row">
+<button id="singleStart">Start QR Scan</button>
+<button id="batchStart">Start Batch Scan</button>
+</div>
+<button id="stop" class="secondary" disabled>Stop Scanner</button>
+<div id="status" class="status info" style="margin-top:12px">Enter Farmer ID and choose a scan mode.</div>
+<div id="reader"></div>
+<div id="cameraDiag" class="small" style="margin-top:8px"></div>
+</div>
+
+<div class="card" id="batchPanel" style="display:none">
+<h3 style="margin-top:0">Batch Scan</h3><div class="small">Duplicate check: <b>Sl.No. only</b>. IR NO can be duplicated. The database must also have UNIQUE on Sl.No. only.</div>
+<div class="counts">
+<div class="count"><b id="scannedCount">0</b>Scanned</div>
+<div class="count"><b id="savedCount">0</b>Saved</div>
+<div class="count"><b id="duplicateCount">0</b>Duplicates</div>
+<div class="count"><b id="errorCount">0</b>Errors</div>
+</div>
+<div id="batchLast" class="small" style="margin-top:10px"></div>
+</div>
+
+<div class="card" id="qrCard" style="display:none">
+<h3 style="margin-top:0">Scanned QR</h3>
+<div class="data">
+<div class="key">NAME</div><div id="name">—</div>
+<div class="key">Sl.No.</div><div id="slno">—</div>
+<div class="key">VARIETY</div><div id="variety">—</div>
+<div class="key">CONSGT. No.</div><div id="consgt">—</div>
+<div class="key">IR NO</div><div id="irno">—</div>
+</div>
+<h4>Raw QR</h4>
+<div id="raw" class="raw"></div>
+<div class="row">
+<button id="assign">Assign to Farmer ID</button>
+<button id="rescan" class="secondary">Scan Again</button>
+</div>
+</div>
+
+<div class="card" id="batchResults" style="display:none">
+<h3 style="margin-top:0">Batch Results</h3>
+<div style="overflow:auto">
+<table>
+<thead><tr><th>#</th><th>Sl.No.</th><th>IR NO</th><th>Status</th></tr></thead>
+<tbody id="batchRows"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card" id="reportsCard">
+<h3 style="margin-top:0">Reports</h3>
+<div class="small">Live report from <b>public.sapling_farmer_assignments</b>. Tap a Farmer ID to expand and view the assigned sapling details.</div>
+
+<div class="report-toolbar" style="margin-top:12px">
+  <button id="refreshReports">Refresh Reports</button>
+  <button id="collapseReports" class="secondary">Collapse All</button>
+</div>
+
+<div id="reportStatus" class="status info" style="margin-top:12px">Press Refresh Reports to load.</div>
+<div id="reportTotal" class="report-total"></div>
+<div id="reportRefreshed" class="small"></div>
+<div id="farmerReports"></div>
+</div>
+
+<div class="card">
+<h3 style="margin-top:0">QR Format</h3>
+<div class="raw">TG OILFED OIL PALM NURSERY
+NAME:ASWARAOPET
+Sl.No.:01/ASPT/CS-00001
+VARIETY:CIRAD # SHORT
+CONSGT. No.:01/ASPT/CS/2025-26
+IR NO: IR08CHE2025017956</div>
+<div class="small" style="margin-top:8px"><b># SHORT is part of VARIETY.</b><br><b>Duplicate rule: only Sl.No. must be unique. IR NO may repeat.</b></div>
+</div>
+
+<div class="small" style="text-align:center;padding:8px 0 20px">TG OILFED Farmer QR Assignment · v5.6-SINGLELINE-QR-FIX-2026-08-17</div>
+</div>
+
+<script>
+const VERSION="v5.6-SINGLELINE-QR-FIX-2026-08-17";
+const SUPABASE_URL="https://zhufcryqamaubxjorjgm.supabase.co";
+const SUPABASE_KEY="sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN";
+let db=null,scanner=null,scanning=false,mode="single",parsed=null,farmerId="";
+let lastDecoded="",lastDecodedAt=0;
+let batchScanned=0,batchSaved=0,batchDuplicates=0,batchErrors=0;
+let batchSL=new Set();
+const $=id=>document.getElementById(id);
+
+function status(t,type="info"){ $("status").textContent=t; $("status").className="status "+type; }
+function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+
+function parseQR(text){
+ const raw=String(text||"").replace(/\r/g,"").trim();
+ const r={name:"",sl_no:"",variety:"",consgt_no:"",ir_no:"",raw_qr_data:raw};
+ const s=raw.replace(/\n+/g," ").replace(/\s+/g," ").trim();
+ const field=(pattern)=>{const m=s.match(pattern);return m?m[1].trim():"";};
+
+ // Supports single-line QR data, including:
+ // SL.NO.:01/ASPT/CS-31983VARIETY:CIRAD # SHORT CONSGT.NO:...
+ r.name=field(/(?:^|\s)NAME\s*:\s*(.*?)(?=\s+SL\s*\.?\s*NO\s*\.?\s*:|$)/i);
+ // Sl.No. ends at VARIETY:, even when there is NO SPACE before VARIETY.
+ r.sl_no=field(/SL\s*\.?\s*NO\s*\.?\s*:\s*(.*?)(?=VARIETY\s*:)/i);
+ r.variety=field(/VARIETY\s*:\s*(.*?)(?=\s+(?:SHORT\s+)?CONSGT\s*\.?\s*NO\s*\.?\s*:|\s+IR\s*NO\s*:|$)/i);
+ r.consgt_no=field(/(?:SHORT\s+)?CONSGT\s*\.?\s*NO\s*:\s*(.*?)(?=\s+IR\s*NO\s*:|$)/i);
+ r.ir_no=field(/IR\s*NO\s*:\s*(.*?)$/i);
+
+ // Fallbacks for legacy multiline QR formatting.
+ if(!r.name){const m=raw.match(/(?:^|\n)\s*NAME\s*:\s*(.*?)(?=\n|$)/i);if(m)r.name=m[1].trim();}
+ if(!r.sl_no){const m=raw.match(/SL\s*\.?\s*NO\s*\.?\s*:\s*(.*?)(?=VARIETY\s*:|\n|$)/i);if(m)r.sl_no=m[1].trim();}
+ if(!r.variety){const m=raw.match(/VARIETY\s*:\s*(.*?)(?=\s+(?:SHORT\s+)?CONSGT\s*\.?\s*NO\s*:\s*|\n|$)/i);if(m)r.variety=m[1].trim();}
+ if(!r.consgt_no){const m=raw.match(/(?:SHORT\s+)?CONSGT\s*\.?\s*NO\s*:\s*(.*?)(?=\s+IR\s*NO\s*:|\n|$)/i);if(m)r.consgt_no=m[1].trim();}
+ if(!r.ir_no){const m=raw.match(/IR\s*NO\s*:\s*(.*?)(?:\n|$)/i);if(m)r.ir_no=m[1].trim();}
+ return r;
+}
+function missing(r){return ["name","sl_no","variety","consgt_no","ir_no"].filter(k=>!r[k])}
+function showQR(r){
+ $("name").textContent=r.name||"Not found"; $("slno").textContent=r.sl_no||"Not found";
+ $("variety").textContent=r.variety||"Not found"; $("consgt").textContent=r.consgt_no||"Not found";
+ $("irno").textContent=r.ir_no||"Not found"; $("raw").textContent=r.raw_qr_data;
+ $("qrCard").style.display="block";
+}
+function resetBatch(){
+ batchScanned=batchSaved=batchDuplicates=batchErrors=0; batchSL=new Set(); batchIR=new Set();
+ lastDecoded="";lastDecodedAt=0;
+ ["scannedCount","savedCount","duplicateCount","errorCount"].forEach(id=>$(id).textContent="0");
+ $("batchRows").innerHTML="";$("batchLast").textContent="";
+ $("batchPanel").style.display="block";$("batchResults").style.display="block";
+}
+function addBatchRow(r,text){
+ const tr=document.createElement("tr");
+ tr.innerHTML="<td>"+batchScanned+"</td><td>"+esc(r.sl_no)+"</td><td>"+esc(r.ir_no)+"</td><td>"+esc(text)+"</td>";
+ $("batchRows").appendChild(tr);
+}
+async function initDB(){
+ if(!window.supabase)throw new Error("Supabase library did not load.");
+ db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+}
+async function stopScanner(){
+ scanning=false;
+ if(scanner){try{await scanner.stop()}catch(e){} try{await scanner.clear()}catch(e){}}
+ scanner=null;$("stop").disabled=true;$("singleStart").disabled=false;$("batchStart").disabled=false;
+ $("reader").innerHTML="";
+ if(mode==="batch")status("Batch Scan stopped. Saved: "+batchSaved+", duplicates: "+batchDuplicates+", errors: "+batchErrors+".","ok");
+ else status("Scanner stopped.");
+}
+async function startScanner(scanMode){
+ farmerId=$("farmerId").value.trim();
+ if(!farmerId){status("Enter Farmer ID first.","err");$("farmerId").focus();return;}
+ mode=scanMode;if(mode==="batch")resetBatch();$("qrCard").style.display="none";
+ $("singleStart").disabled=true;$("batchStart").disabled=true;$("stop").disabled=false;$("reader").innerHTML="";
+ status("Starting mobile camera...","info");
+ try{
+  if(!window.isSecureContext && location.hostname!=="localhost" && location.hostname!=="127.0.0.1")throw new Error("This page is not HTTPS.");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error("Camera API is not available in this browser.");
+  const testStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+  testStream.getTracks().forEach(t=>t.stop());
+  if(!window.Html5Qrcode)throw new Error("QR scanner library has not loaded. Reload the page.");
+  scanner=new Html5Qrcode("reader");scanning=true;
+  await scanner.start({facingMode:"environment"},
+   {fps:10,qrbox:function(w,h){const size=Math.max(180,Math.min(320,Math.floor(Math.min(w,h)*.70)));return {width:size,height:size}},disableFlip:false},
+   onQR,()=>{});
+  $("cameraDiag").textContent="Camera permission OK · QR scanner active · "+VERSION;
+  status(mode==="batch"?"Batch Scan active. Scan QR codes; valid records save automatically.":"QR scanner active. Point the camera at the QR sticker.","ok");
+ }catch(e){
+  console.error(e);scanning=false;scanner=null;$("stop").disabled=true;$("singleStart").disabled=false;$("batchStart").disabled=false;
+  $("cameraDiag").textContent="ERROR · "+(e.name||"")+" · "+(e.message||"");
+  status("Scanner could not start: "+(e.message||e.name||"Unknown error"),"err");
+ }
+}
+async function onQR(decodedText){
+ if(!scanning)return;
+ const now=Date.now();if(decodedText===lastDecoded&&now-lastDecodedAt<1800)return;
+ lastDecoded=decodedText;lastDecodedAt=now;
+ if(mode==="single"){
+  parsed=parseQR(decodedText);await stopScanner();showQR(parsed);
+  const m=missing(parsed);status(m.length?"Missing: "+m.join(", "):"QR scanned. Verify and assign.",m.length?"err":"ok");return;
+ }
+ await processBatch(decodedText);
+}
+async function processBatch(text){
+ batchScanned++;$("scannedCount").textContent=batchScanned;const r=parseQR(text);
+ if(!r.sl_no){batchErrors++;$("errorCount").textContent=batchErrors;addBatchRow(r,"ERROR: Sl.No. missing");$("batchLast").textContent="Rejected: Sl.No. missing.";return;}
+ if(batchSL.has(r.sl_no)){batchDuplicates++;$("duplicateCount").textContent=batchDuplicates;addBatchRow(r,"DUPLICATE Sl.No. — NOT SAVED");$("batchLast").textContent="Duplicate Sl.No. "+r.sl_no+" — not saved.";return;}
+ const m=missing(r);if(m.length){batchErrors++;$("errorCount").textContent=batchErrors;addBatchRow(r,"ERROR: "+m.join(", ")+" missing");$("batchLast").textContent="Rejected "+r.sl_no+": "+m.join(", ")+" missing.";return;}
+ try{
+  // Only Sl.No. is a duplicate key. IR NO is deliberately NOT checked.
+  const {data:existing,error:lookupError}=await db.from("sapling_farmer_assignments").select("sl_no").eq("sl_no",r.sl_no).limit(1);
+  if(lookupError) throw lookupError;
+  if(existing && existing.length){
+   batchDuplicates++;$("duplicateCount").textContent=batchDuplicates;
+   addBatchRow(r,"DUPLICATE Sl.No. — NOT SAVED");
+   $("batchLast").textContent="Sl.No. "+r.sl_no+" already exists — not saved.";
+   batchSL.add(r.sl_no);
+   return;
+  }
+  const {error}=await db.from("sapling_farmer_assignments").insert({farmer_id:farmerId,name:r.name,sl_no:r.sl_no,variety:r.variety,short_consgt_no:r.consgt_no,ir_no:r.ir_no,raw_qr_data:r.raw_qr_data});
+  if(error){
+   if(error.code==="23505"){
+    batchDuplicates++;$("duplicateCount").textContent=batchDuplicates;
+    addBatchRow(r,"DATABASE UNIQUE CONSTRAINT — CHECK Sl.No. INDEX");
+    $("batchLast").textContent="Database unique constraint rejected "+r.sl_no+". Ensure only Sl.No. has a UNIQUE constraint.";
+    return;
+   }
+   throw error;
+  }
+  batchSL.add(r.sl_no);batchSaved++;$("savedCount").textContent=batchSaved;
+  addBatchRow(r,"SAVED");$("batchLast").textContent="Saved "+r.sl_no+" → Farmer "+farmerId;
+ }catch(e){batchErrors++;$("errorCount").textContent=batchErrors;addBatchRow(r,"ERROR: "+(e.message||"Save failed"));$("batchLast").textContent="Save error: "+(e.message||"");}
+}
+async function assignSingle(){
+ if(!db)await initDB();const farmer=$("farmerId").value.trim();if(!farmer||!parsed)return;
+ $("assign").disabled=true;
+ try{
+  if(!parsed.sl_no){throw new Error("Sl.No. is missing from the QR.");}
+  const {data:existing,error:lookupError}=await db.from("sapling_farmer_assignments").select("sl_no").eq("sl_no",parsed.sl_no).limit(1);
+  if(lookupError)throw lookupError;
+  if(existing && existing.length){
+   status("Duplicate Sl.No. — record was NOT saved.","err");
+   return;
+  }
+  const {error}=await db.from("sapling_farmer_assignments").insert({farmer_id:farmer,name:parsed.name||null,sl_no:parsed.sl_no||null,variety:parsed.variety||null,short_consgt_no:parsed.consgt_no||null,ir_no:parsed.ir_no||null,raw_qr_data:parsed.raw_qr_data});
+  if(error)throw error;$("assign").textContent="Saved";status("Assignment saved successfully.","ok");
+ }catch(e){status(e.code==="23505"?"Duplicate Sl.No. — record was NOT saved.":(e.message||"Save failed."),"err");}
+ finally{$("assign").disabled=false}
+}
+
+async function loadReports(){
+  const box=$("farmerReports");
+  const reportStatus=$("reportStatus");
+  const total=$("reportTotal");
+  box.innerHTML="";
+  total.textContent="";
+  $("reportRefreshed").textContent="";
+  reportStatus.textContent="Loading Farmer Reports...";
+  reportStatus.className="status info";
+
+  try{
+    if(!db) await initDB();
+
+    const {data,error}=await db
+      .from("sapling_farmer_assignments")
+      .select("farmer_id,name,sl_no,variety,short_consgt_no,ir_no,raw_qr_data,assigned_at")
+      .order("farmer_id",{ascending:true})
+      .order("sl_no",{ascending:true});
+
+    if(error) throw error;
+
+    const rows=data||[];
+    const groups=new Map();
+
+    rows.forEach(row=>{
+      const farmer=String(row.farmer_id||"").trim() || "No Farmer ID";
+      if(!groups.has(farmer)) groups.set(farmer,[]);
+      groups.get(farmer).push(row);
+    });
+
+    total.textContent="Total Farmers: "+groups.size+" · Total Saplings: "+rows.length;
+
+    if(!groups.size){
+      reportStatus.textContent="No assignments found.";
+      reportStatus.className="status info";
+      return;
+    }
+
+    reportStatus.textContent="Reports loaded directly from the Supabase table.";
+    reportStatus.className="status ok";
+    $("reportRefreshed").textContent="Last refreshed: "+new Date().toLocaleString();
+
+    let index=0;
+    groups.forEach((items,farmer)=>{
+      index++;
+      const row=document.createElement("div");
+      row.className="report-row";
+
+      const head=document.createElement("div");
+      head.className="report-head";
+      head.innerHTML=
+        '<div class="report-farmer">'+esc(farmer)+'</div>'+
+        '<div class="report-count">'+items.length+'</div>'+
+        '<div class="report-toggle">View Details ▾</div>';
+
+      const details=document.createElement("div");
+      details.className="report-details";
+
+      items.forEach((item,n)=>{
+        const d=document.createElement("div");
+        d.className="report-detail";
+        d.innerHTML=
+          '<div style="font-weight:800;margin-bottom:7px">Sapling '+(n+1)+'</div>'+
+          '<div class="report-detail-grid">'+
+          '<div class="report-label">NAME</div><div>'+esc(item.name||"—")+'</div>'+
+          '<div class="report-label">Sl.No.</div><div>'+esc(item.sl_no||"—")+'</div>'+
+          '<div class="report-label">VARIETY</div><div>'+esc(item.variety||"—")+'</div>'+
+          '<div class="report-label">CONSGT. No.</div><div>'+esc(item.short_consgt_no||"—")+'</div>'+
+          '<div class="report-label">IR NO</div><div>'+esc(item.ir_no||"—")+'</div>'+
+          '</div>';
+        details.appendChild(d);
+      });
+
+      head.onclick=()=>{
+        const open=details.classList.toggle("open");
+        head.querySelector(".report-toggle").textContent=open?"Hide Details ▴":"View Details ▾";
+      };
+
+      row.appendChild(head);
+      row.appendChild(details);
+      box.appendChild(row);
+    });
+
+  }catch(e){
+    console.error(e);
+    const msg=e.message||"Unknown error";
+    reportStatus.textContent=msg.toLowerCase().includes("row-level security")
+      ?"Reports blocked by Supabase RLS. Add a SELECT policy for this table."
+      :"Could not load reports: "+msg;
+    reportStatus.className="status err";
+  }
+}
+
+function collapseAllReports(){
+  document.querySelectorAll(".report-details.open").forEach(el=>el.classList.remove("open"));
+  document.querySelectorAll(".report-toggle").forEach(el=>el.textContent="View Details ▾");
+}
+
+window.addEventListener("load",async()=>{
+ $("cameraDiag").textContent="Version "+VERSION+" · page loaded";
+ try{
+  await initDB();
+  await loadReports();
+ }catch(e){
+  console.error(e);
+  $("reportStatus").textContent="Supabase connection failed: "+(e.message||"Unknown error");
+  $("reportStatus").className="status err";
+ }
+});
+$("singleStart").onclick=()=>startScanner("single");
+$("batchStart").onclick=()=>startScanner("batch");
+$("stop").onclick=stopScanner;
+$("assign").onclick=assignSingle;
+$("rescan").onclick=async()=>{$("qrCard").style.display="none";parsed=null;await startScanner("single")};
+$("refreshReports").onclick=loadReports;
+$("collapseReports").onclick=collapseAllReports;
+
+</script>
+</body>
+</html>
