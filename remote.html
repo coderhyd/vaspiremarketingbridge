@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vaspire Guest Remote</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--card:#0d1b2a;--card2:#102235;--line:#29455c;--text:#eef6fb;--muted:#91a7bb;--accent:#13b8a6;--danger:#ef5350;--live:#35d39b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#06101c,#0c1d2c);color:var(--text);font:14px Arial,sans-serif;min-height:100vh}.wrap{max-width:620px;margin:auto;padding:18px}.brand{font-size:22px;font-weight:900;margin:4px 0 16px}.brand span{color:var(--accent)}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 12px 30px #0005}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}.eyebrow{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1.2px}.title{font-size:24px;font-weight:900;margin-top:5px}.meeting{font-size:12px;color:var(--muted);margin-top:5px}.live{border:1px solid #167d61;background:#09291f}.live .badge{display:inline-flex;background:var(--live);color:#031a12;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900}.liveTitle{font-size:20px;font-weight:900;margin:12px 0 4px}.liveFile{color:#b9cbd7;font-size:12px;word-break:break-word}.livePreview{margin-top:14px;border-radius:12px;overflow:hidden;background:#000;min-height:180px;display:flex;align-items:center;justify-content:center}.livePreview img{max-width:100%;max-height:330px;object-fit:contain}.empty{color:#667d8e;text-align:center;padding:30px}.own{border:1px solid var(--line)}.own.playing{border-color:var(--accent);box-shadow:0 0 0 2px #13b8a622}.ownHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.ownTitle{font-size:19px;font-weight:900}.statusPill{font-size:10px;font-weight:900;border-radius:999px;padding:6px 9px;background:#213a50;color:#cfe1eb}.statusPill.live{background:var(--accent);color:#031511}.slide{margin-top:13px;border-radius:12px;overflow:hidden;background:#000;min-height:190px;display:flex;align-items:center;justify-content:center}.slide img{max-width:100%;max-height:340px;object-fit:contain}.filename{font-size:12px;color:var(--muted);margin-top:10px;word-break:break-word}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}button{border:0;border-radius:12px;padding:15px;font-weight:900;font-size:15px;cursor:pointer}button.play{background:var(--accent);color:#031511}button.stop{background:var(--danger);color:#fff}button:disabled{opacity:.45;cursor:not-allowed}.notice{font-size:12px;line-height:1.5;color:var(--muted);text-align:center;padding:4px 10px}.error{background:#351916;border-color:#71312c;color:#ffb7b3}.hidden{display:none}@media(max-width:420px){.wrap{padding:12px}.title{font-size:21px}.actions{grid-template-columns:1fr}.card{padding:15px}}
+</style></head>
+<body><div class="wrap">
+<div class="brand">Vaspire <span>Guest Remote</span></div>
+<div id="errorCard" class="card error hidden"></div>
+<div id="main" class="hidden">
+  <section class="card"><div class="eyebrow">Your session</div><div id="guestName" class="title">Guest</div><div id="meetingInfo" class="meeting"></div></section>
+  <section class="card live"><div class="top"><div class="eyebrow">Projector status</div><div id="liveBadge" class="badge">NOW PLAYING</div></div><div id="nowTitle" class="liveTitle">Nothing is playing</div><div id="nowFile" class="liveFile"></div><div id="nowPreview" class="livePreview"><div class="empty">No presentation is currently playing.</div></div></section>
+  <section id="ownCard" class="card own"><div class="ownHead"><div><div class="eyebrow">Your slide</div><div id="ownTitle" class="ownTitle">Your presentation</div></div><div id="ownStatus" class="statusPill">READY</div></div><div id="ownPreview" class="slide"><div class="empty">Loading your slide…</div></div><div id="ownFile" class="filename"></div><div class="actions"><button id="play" class="play">▶ PLAY MY SLIDE</button><button id="stop" class="stop">■ STOP PRESENTATION</button></div></section>
+  <div class="notice">Only your uploaded presentation is available on this remote. The projector's current presentation is shown above.</div>
+</div></div>
+<script>
+const SUPABASE_URL='https://zhufcryqamaubxjorjgm.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const params=new URLSearchParams(location.search),meetingId=params.get('meeting'),session=params.get('session');
+let guest=null, own=null, channel=null;
+const $=id=>document.getElementById(id);
+function fail(msg){$('errorCard').textContent=msg;$('errorCard').classList.remove('hidden');$('main').classList.add('hidden')}
+function typeOf(name){return /\.(mp4|webm|ogg|mov|m4v)$/i.test(name||'')?'video':'image'}
+function renderNow(p){
+ if(!p){$('nowTitle').textContent='Nothing is playing';$('nowFile').textContent='';$('nowPreview').innerHTML='<div class="empty">No presentation is currently playing.</div>';return}
+ $('nowTitle').textContent=p.guest_name||'Presentation playing';$('nowFile').textContent=p.file_name||'';
+ if(typeOf(p.file_name)==='image')$('nowPreview').innerHTML='<img src="'+p.file_url+'" alt="Now playing">';else $('nowPreview').innerHTML='<video src="'+p.file_url+'" autoplay muted controls style="max-width:100%;max-height:330px"></video>';
+}
+function renderOwn(){
+ if(!own){$('ownPreview').innerHTML='<div class="empty">No slide found.</div>';$('play').disabled=true;$('stop').disabled=true;return}
+ $('ownTitle').textContent=guest.name||'Your presentation';$('ownFile').textContent=own.file_name||'';
+ $('ownPreview').innerHTML='<img src="'+own.file_url+'" alt="Your slide">';
+ const playing=own.status==='playing';$('ownStatus').textContent=playing?'NOW PLAYING':'READY';$('ownStatus').className='statusPill'+(playing?' live':'');$('ownCard').classList.toggle('playing',playing);$('play').disabled=playing;$('stop').disabled=!playing;
+}
+async function load(){
+ if(!meetingId||!session)return fail('Invalid remote session. Please use the OPEN MY REMOTE button from your upload page.');
+ const m=await sb.from('meetings').select('id,title,active').eq('id',meetingId).maybeSingle();if(m.error||!m.data)return fail('Meeting not found.');if(!m.data.active)return fail('This meeting is no longer active.');
+ const g=await sb.from('guests').select('*').eq('id',session).eq('meeting_id',meetingId).maybeSingle();if(g.error||!g.data)return fail('Remote session not recognised. Please reopen the remote from your guest page.');guest=g.data;
+ $('guestName').textContent=guest.name||'Guest';$('meetingInfo').textContent='Meeting: '+(m.data.title||meetingId);
+ await refresh();$('main').classList.remove('hidden');
+ channel=sb.channel('guest-remote-'+meetingId+'-'+session).on('postgres_changes',{event:'*',schema:'public',table:'presentations',filter:'meeting_id=eq.'+meetingId},async payload=>{await refresh()}).subscribe();
+}
+async function refresh(){
+ const all=await sb.from('presentations').select('*,guests(name)').eq('meeting_id',meetingId);if(all.error)return;
+ const rows=all.data||[];own=rows.filter(p=>p.guest_id===guest.id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0]||null;
+ const current=rows.find(p=>p.status==='playing')||null;renderOwn();renderNow(current?{...current,guest_name:current.guests?.name}:null);
+}
+$('play').onclick=async()=>{if(!own)return;$('play').disabled=true;const end=await sb.from('presentations').update({status:'ended'}).eq('meeting_id',meetingId).eq('status','playing');if(end.error)return alert(end.error.message);const r=await sb.from('presentations').update({status:'playing',played_at:new Date().toISOString()}).eq('id',own.id).eq('guest_id',guest.id);if(r.error)alert(r.error.message);await refresh()};
+$('stop').onclick=async()=>{if(!own)return;$('stop').disabled=true;const r=await sb.from('presentations').update({status:'ended'}).eq('id',own.id).eq('guest_id',guest.id).eq('status','playing');if(r.error)alert(r.error.message);await refresh()};
+load().catch(e=>fail(e.message||'Unable to open remote.'));
+</script></body></html>
