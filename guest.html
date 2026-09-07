@@ -12,7 +12,7 @@
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:18px;box-shadow:0 14px 40px #2d185018}h1{margin:0 0 8px;font-size:28px}.muted{color:var(--muted);font-size:13px;line-height:1.65}
 label{display:block;font-size:12px;font-weight:800;margin:16px 0 7px}input[type=text],input[type=tel],input[type=file]{width:100%;padding:12px;border:1px solid #dcd5e5;border-radius:10px;font-size:15px;background:#fff}
 button{width:100%;padding:14px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:900;font-size:15px;margin-top:14px;cursor:pointer}button.secondary{background:#24212a}button.end{background:#444}button.remote{background:#0b8f68}button:disabled{opacity:.45;cursor:not-allowed}
-.preview{margin-top:18px;border:1px solid #e6e0eb;border-radius:12px;min-height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;overflow:hidden;padding:10px;color:#777;text-align:center}.preview img{max-width:100%;max-height:360px;object-fit:contain}.my-slide-preview{margin:14px 0 4px;border:1px solid #ddd6e8;border-radius:14px;background:#f8f6fb;overflow:hidden}.my-slide-head{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;font-size:10px;font-weight:900;letter-spacing:.7px;color:#62596e;border-bottom:1px solid #e4deeb}.my-slide-head span:last-child{font-weight:700;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}.my-slide-frame{min-height:210px;display:flex;align-items:center;justify-content:center;padding:12px;background:#eeeaf3}.my-slide-frame img{display:block;max-width:100%;max-height:360px;width:auto;height:auto;object-fit:contain;border-radius:5px;box-shadow:0 3px 14px rgba(0,0,0,.14)}
+.preview{margin-top:18px;border:1px solid #e6e0eb;border-radius:12px;min-height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;overflow:hidden;padding:10px;color:#777;text-align:center}.preview img{max-width:100%;max-height:360px;object-fit:contain}
 .status{margin-top:13px;padding:11px 12px;border-radius:9px;background:#f4f0f8;color:var(--brand);font-size:13px;font-weight:800;line-height:1.45}.status.good{color:var(--good);background:#ecfaf5}.status.error{color:var(--danger);background:#fff0ee}.meeting{font-size:11px;color:#777;margin-top:10px;word-break:break-all}.hidden{display:none!important}
 </style>
 </head>
@@ -26,23 +26,12 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:var(--bran
     <form id="form">
       <label for="name">Name</label><input id="name" type="text" required placeholder="Your name">
       <label for="company">Company</label><input id="company" type="text" placeholder="Company / organisation">
-      <div id="seatField" class="seat-field hidden">
-        <label for="seatNumber">Seat Number <span>*</span></label>
-        <input id="seatNumber" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="Enter your seat number">
-        <div class="hint">Your seat number is required for this meeting.</div>
-      </div>
       <label for="file">Slide</label><input id="file" type="file" accept="image/*" required>
-      <button id="galleryBtn" type="button" class="secondary" style="margin-top:8px">📷 CHOOSE FROM GALLERY</button>
       <div class="preview" id="preview">Select your slide</div>
       <button id="uploadBtn" type="submit">Upload My Slide</button>
     </form>
 
     <div id="playArea" class="hidden">
-      <div id="guestIdentity" class="guest-identity hidden"><div class="eyebrow">YOUR DETAILS</div><div class="identity-main"><div class="seat" id="seatDisplay">—</div><div class="divider"></div><div class="person"><div class="person-name" id="guestNameDisplay">Guest</div><div class="company-name" id="guestCompanyDisplay">—</div></div></div></div>
-      <div class="my-slide-preview">
-        <div class="my-slide-head"><span>YOUR UPLOADED SLIDE</span><span id="slideFileName"></span></div>
-        <div class="my-slide-frame"><img id="mySlidePreview" alt="Your uploaded slide preview"></div>
-      </div>
       <div class="status" id="status">Slide uploaded and ready.</div>
       <button id="play">▶ PLAY MY SLIDE</button>
       <button id="end" class="end">⏹ END PRESENTATION</button>
@@ -64,16 +53,6 @@ const playArea=document.getElementById('playArea');
 const statusBox=document.getElementById('status');
 const meetingInfo=document.getElementById('meetingInfo');
 const uploadBtn=document.getElementById('uploadBtn');
-const galleryBtn=document.getElementById('galleryBtn');
-const seatField=document.getElementById('seatField');
-const seatNumberInput=document.getElementById('seatNumber');
-const guestIdentity=document.getElementById('guestIdentity');
-const guestNameDisplay=document.getElementById('guestNameDisplay');
-const guestCompanyDisplay=document.getElementById('guestCompanyDisplay');
-const seatDisplay=document.getElementById('seatDisplay');
-let seatRequired=false;
-const mySlidePreview=document.getElementById('mySlidePreview');
-const slideFileName=document.getElementById('slideFileName');
 let selectedFile=null;
 let guestId=null;
 let presentationId=null;
@@ -84,58 +63,12 @@ function safeName(name){return name.replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120
 
 async function verifyMeeting(){
   if(!meetingId){status('Invalid guest link: meeting ID is missing.','error');uploadBtn.disabled=true;return false}
-  const {data,error}=await sb.from('meetings').select('id,title,active,code,seat_required').eq('id',meetingId).maybeSingle();
+  const {data,error}=await sb.from('meetings').select('id,title,active,code').eq('id',meetingId).maybeSingle();
   if(error){status('Could not connect to the meeting database: '+error.message,'error');uploadBtn.disabled=true;return false}
   if(!data || data.active===false){status('This meeting is not active. Please scan the current meeting QR code.','error');uploadBtn.disabled=true;return false}
-  seatRequired=data.seat_required!==false;
-  seatField.classList.toggle('hidden',!seatRequired);
-  seatNumberInput.required=seatRequired;
-  meetingInfo.textContent='Meeting: '+(data.title||data.code||meetingId)+' · Seat '+(seatRequired?'Required':'Optional');
+  meetingInfo.textContent='Meeting: '+(data.title||data.code||meetingId);
   return true;
 }
-
-async function restoreGuestSession(){
-  if(!meetingId)return false;
-  let savedGuestId=null;
-  try{savedGuestId=localStorage.getItem('vaspire_guest_session_'+meetingId)}catch(e){}
-  if(!savedGuestId)return false;
-
-  try{
-    const {data:guest,error:guestError}=await sb.from('guests')
-      .select('id,name,company,seat_number').eq('id',savedGuestId).eq('meeting_id',meetingId).maybeSingle();
-    if(guestError || !guest)return false;
-
-    const {data:pres,error:presError}=await sb.from('presentations')
-      .select('id,file_name,file_url,status,played_at,created_at')
-      .eq('meeting_id',meetingId).eq('guest_id',savedGuestId)
-      .order('created_at',{ascending:false}).limit(1).maybeSingle();
-    if(presError || !pres)return false;
-
-    guestId=guest.id;
-    remoteSession=guest.id;
-    presentationId=pres.id;
-    seatDisplay.textContent=guest.seat_number||'—';
-    guestNameDisplay.textContent=guest.name||'Guest';
-    guestCompanyDisplay.textContent=guest.company||'Company not provided';
-    guestIdentity.classList.remove('hidden');
-    mySlidePreview.src=pres.file_url;
-    slideFileName.textContent=pres.file_name||'Uploaded slide';
-    document.getElementById('name').value=guest.name||'';
-    document.getElementById('company').value=guest.company||'';
-
-    form.classList.add('hidden');
-    playArea.classList.remove('hidden');
-    status(pres.status==='playing'
-      ? '▶ Your slide is LIVE on the projector.'
-      : 'Slide uploaded and ready. Press PLAY MY SLIDE when you begin speaking.','good');
-    return true;
-  }catch(e){
-    console.warn('Guest session restore failed:',e);
-    return false;
-  }
-}
-
-galleryBtn.addEventListener('click',()=>fileInput.click());
 
 fileInput.addEventListener('change',()=>{
   selectedFile=fileInput.files[0]||null;
@@ -149,24 +82,15 @@ fileInput.addEventListener('change',()=>{
 
 form.addEventListener('submit',async(e)=>{
   e.preventDefault();
-  if(!selectedFile){
-    status('Please select a slide first.','error');
-    fileInput.click();
-    return;
-  }
+  if(!selectedFile)return status('Please select a slide first.','error');
   uploadBtn.disabled=true;
   status('Uploading your slide…');
   try{
     const name=document.getElementById('name').value.trim()||'Guest';
     const company=document.getElementById('company').value.trim();
-    const seat=seatNumberInput.value.trim();
-    if(seatRequired){
-      if(!seat){seatNumberInput.focus();throw new Error('Seat Number is required for this meeting.');}
-      if(!/^[0-9]+$/.test(seat) || Number(seat)<1){seatNumberInput.focus();throw new Error('Enter a valid numeric Seat Number.');}
-    }
     guestId=crypto.randomUUID();
 
-    const guestInsert=await sb.from('guests').insert({id:guestId,meeting_id:meetingId,name,company,seat_number:seatRequired?seat:null}).select().single();
+    const guestInsert=await sb.from('guests').insert({id:guestId,meeting_id:meetingId,name,company}).select().single();
     if(guestInsert.error)throw guestInsert.error;
 
     const path=meetingId+'/'+guestId+'-'+Date.now()+'-'+safeName(selectedFile.name);
@@ -180,12 +104,6 @@ form.addEventListener('submit',async(e)=>{
     }).select().single();
     if(presentationInsert.error)throw presentationInsert.error;
     presentationId=presentationInsert.data.id;
-    seatDisplay.textContent=seatRequired?seat:'—';
-    guestNameDisplay.textContent=name;
-    guestCompanyDisplay.textContent=company||'Company not provided';
-    guestIdentity.classList.remove('hidden');
-    mySlidePreview.src=publicUrl;
-    slideFileName.textContent=selectedFile.name||'Uploaded slide';
     remoteSession=guestId;
     try{localStorage.setItem('vaspire_guest_session_'+meetingId,guestId)}catch(e){}
 
@@ -224,12 +142,6 @@ document.getElementById('remote').addEventListener('click',()=>{
   location.href=url.href;
 });
 
-(async function(){
-  const valid=await verifyMeeting();
-  if(valid){
-    const restored=await restoreGuestSession();
-    if(!restored) form.classList.remove('hidden');
-  }
-})();
+verifyMeeting();
 </script>
 </body></html>
