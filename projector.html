@@ -19,8 +19,8 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
 .qr{background:#fff;padding:10px;width:max-content;margin:10px auto;border-radius:8px;min-height:20px}.url{font-size:11px;color:#9debe0;word-break:break-all}
 .preview{height:440px;background:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}.preview img,.preview video{max-width:100%;max-height:100%;object-fit:contain}.empty{color:#60778b;text-align:center}
 .item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--line)}.name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.small{font-size:11px;color:var(--muted)}
-.guest{display:grid;grid-template-columns:52px minmax(150px,1.15fr) minmax(150px,1.15fr) 125px 105px minmax(170px,1.3fr) 235px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);min-height:52px}.guest.head{color:var(--muted);font-size:11px;font-weight:800;min-height:34px;padding-top:5px;padding-bottom:5px}.guest>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.guest .small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;overflow:visible}.actions button{font-size:11px;padding:7px 9px;white-space:nowrap;min-width:auto}.guestListWrap{overflow-x:auto}.guestListWrap .guest{min-width:1050px}@media(max-width:1050px){.grid,.main{grid-template-columns:1fr}.preview{height:330px}.guest{grid-template-columns:45px 1.1fr 1.1fr 110px 90px 1.2fr 210px;min-width:980px}.guest.head{min-width:980px}.guestListWrap{overflow-x:auto}.actions{flex-wrap:nowrap}}
-.screen-mode{background:#000!important;width:100vw;height:100vh;overflow:hidden}.screen-mode .wrap{display:none}
+.guest{display:grid;grid-template-columns:52px minmax(150px,1.15fr) minmax(150px,1.15fr) 125px 105px minmax(170px,1.3fr) 235px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);min-height:52px}.guest.head{color:var(--muted);font-size:11px;font-weight:800;min-height:34px;padding-top:5px;padding-bottom:5px}.guest>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.guest .small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.guest.is-playing{background:#123d35;border:1px solid #13b8a6;box-shadow:inset 4px 0 0 #13b8a6}.guest.is-playing .playing-badge{display:inline-block}.playing-badge{display:none;background:#13b8a6;color:#031511;border-radius:5px;padding:3px 6px;font-size:10px;font-weight:900;margin-left:5px}.actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;overflow:visible}.actions button{font-size:11px;padding:7px 9px;white-space:nowrap;min-width:auto}.guestListWrap{overflow-x:auto}.guestListWrap .guest{min-width:1050px}@media(max-width:1050px){.grid,.main{grid-template-columns:1fr}.preview{height:330px}.guest{grid-template-columns:45px 1.1fr 1.1fr 110px 90px 1.2fr 210px;min-width:980px}.guest.head{min-width:980px}.guestListWrap{overflow-x:auto}.actions{flex-wrap:nowrap}}
+.screen-mode{background:#000!important;width:100vw;height:100vh;overflow:hidden}.screen-mode .wrap{display:none}.marquee-panel{margin-top:12px}.marquee-panel .row{align-items:center}.marquee-panel input{flex:1;min-width:220px}.marquee-track{position:fixed;left:0;right:0;bottom:0;height:58px;background:rgba(0,0,0,.82);color:#fff;display:flex;align-items:center;overflow:hidden;z-index:20;border-top:2px solid #13b8a6}.marquee-track span{display:inline-block;white-space:nowrap;padding-left:100%;font-size:30px;font-weight:800;animation:vaspireMarquee 18s linear infinite}@keyframes vaspireMarquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 </style>
 </head>
 <body>
@@ -36,6 +36,16 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
 
   <div id="appStatus" class="status">Starting control panel…</div>
 
+  <section class="panel marquee-panel">
+    <h3>Live Screen Marquee</h3>
+    <div class="row">
+      <input id="marqueeText" type="text" maxlength="240" placeholder="Enter scrolling text for the live screen">
+      <button id="showMarquee">Show Marquee</button>
+      <button id="clearMarquee" class="secondary">Clear</button>
+    </div>
+    <div class="small">The text scrolls at the bottom of the Live Screen.</div>
+  </section>
+
   <div class="grid">
     <aside>
       <section class="panel">
@@ -46,7 +56,7 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
         <br><br>
         <label><input id="seatRequired" type="checkbox" checked> Seat Number Mandatory</label>
         <div class="small" style="margin-top:5px">If disabled, Paid Members may upload without a seat number.</div>
-        <br><button id="createMeeting">Create Meeting</button>
+        <br><button id="createMeeting">Create Meeting</button><br><br><button id="openRemote" class="secondary" type="button">Open Remote Control</button>
 
         <div class="field">
           <label>View Meeting Media</label>
@@ -178,6 +188,8 @@ function mediaType(name){
 }
 
 var lastScreenData = null;
+var lastMarqueeText = "";
+try{lastMarqueeText=localStorage.getItem("vaspire_live_marquee")||"";}catch(e){}
 var lastPreviewData = {type:'CLEAR'};
 var operatorSeatRequired = true;
 var screenChannel = null;
@@ -353,22 +365,37 @@ body{display:flex;align-items:center;justify-content:center;font-family:Arial,sa
 #empty{color:#62788a;font-size:28px;letter-spacing:.5px}
 #label{position:fixed;left:18px;top:15px;padding:7px 12px;border-radius:6px;
 background:rgba(0,0,0,.62);color:#fff;font:700 14px Arial;z-index:5}
+#marquee{position:fixed;left:0;right:0;bottom:0;height:58px;background:rgba(0,0,0,.82);color:#fff;display:none;align-items:center;overflow:hidden;z-index:20;border-top:2px solid #13b8a6}
+#marquee span{display:inline-block;white-space:nowrap;padding-left:100%;font-size:30px;font-weight:800;animation:vaspireMarquee 18s linear infinite}
+@keyframes vaspireMarquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 </style>
 </head>
 <body>
 <div id="stage"><div id="empty">${isPreview?'PREVIEW SCREEN':'NOW PLAYING'}</div></div>
 <div id="label">${isPreview?'PREVIEW':'NOW PLAYING'}</div>
+<div id="marquee"><span></span></div>
 <script>
 (function(){
   var mode=${JSON.stringify(isPreview?'preview':'live')};
   var channel=('BroadcastChannel' in window)?new BroadcastChannel('vaspire_projector_'+mode):null;
   var stage=document.getElementById('stage');
 
+  function renderMarquee(text){
+    var box=document.getElementById("marquee");
+    var span=box.querySelector("span");
+    text=String(text||"").trim();
+    if(mode!=="live" || !text){box.style.display="none";span.textContent="";return;}
+    span.textContent=text;
+    box.style.display="flex";
+  }
+
   function render(data){
     if(!data || data.type==='CLEAR'){
       stage.innerHTML='<div id="empty">'+(mode==='preview'?'PREVIEW SCREEN':'NOW PLAYING')+'</div>';
       return;
     }
+    if(data.type==='MARQUEE'){renderMarquee(data.text);return;}
+    if(data.type==='CLEAR_MARQUEE'){renderMarquee('');return;}
     if(data.type!==(mode==='preview'?'PREVIEW':'PLAY')) return;
 
     stage.innerHTML='';
@@ -392,6 +419,7 @@ background:rgba(0,0,0,.62);color:#fff;font:700 14px Arial;z-index:5}
 
   if(channel) channel.onmessage=function(e){render(e.data)};
   window.addEventListener('storage',function(e){
+    if(mode==='live' && e.key==='vaspire_live_marquee'){renderMarquee(e.newValue||'');return;}
     if(e.key==='vaspire_'+mode+'_screen_data' && e.newValue){
       try{render(JSON.parse(e.newValue));}catch(err){}
     }
@@ -442,6 +470,12 @@ function broadcastLive(data){
   broadcastToScreen('live',data);
 }
 
+function broadcastMarquee(text){
+  lastMarqueeText=String(text||"").trim();
+  try{localStorage.setItem("vaspire_live_marquee",lastMarqueeText);}catch(e){}
+  broadcastToScreen('live',{type:lastMarqueeText?'MARQUEE':'CLEAR_MARQUEE',text:lastMarqueeText});
+}
+
 window.addEventListener('message',function(e){
   if(!e.data || e.data.type!=='REQUEST_SCREEN_STATE')return;
 
@@ -450,6 +484,7 @@ window.addEventListener('message',function(e){
 
   try{
     e.source.postMessage({type:'SCREEN_STATE',mode:mode,data:data},'*');
+    if(mode==='live') e.source.postMessage({type:'SCREEN_STATE',mode:mode,data:{type:lastMarqueeText?'MARQUEE':'CLEAR_MARQUEE',text:lastMarqueeText}},'*');
   }catch(err){}
 });
 
@@ -686,6 +721,9 @@ function initLocal(){
     if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
   });
   $('clearPreview').addEventListener('click',clearLocal);
+  $('showMarquee').addEventListener('click',function(){broadcastMarquee($('marqueeText').value);});
+  $('clearMarquee').addEventListener('click',function(){$('marqueeText').value='';broadcastMarquee('');});
+  $('marqueeText').value=lastMarqueeText;
   $('stopLive').addEventListener('click',clearLocal);
   $('loadFolder').addEventListener('click',loadLocalFolder);
   $('previous').addEventListener('click',function(){
@@ -749,8 +787,18 @@ async function startSupabase(){
   }
 }
 
+function openRemoteControl(){
+  if(!meeting)return alert('Select a meeting first.');
+  if(!meeting.code)return alert('This meeting has no session code.');
+  var u=new URL('/remote.html',window.location.origin);
+  u.searchParams.set('meeting',meeting.id);
+  u.searchParams.set('session',meeting.code);
+  window.open(u.href,'vaspire_remote_control','width=520,height=850,resizable=yes,scrollbars=yes');
+}
+
 function bindSupabaseButtons(){
   if($('createMeeting')) $('createMeeting').addEventListener('click',createMeeting);
+  if($('openRemote')) $('openRemote').addEventListener('click',openRemoteControl);
   if($('copyLink')) $('copyLink').addEventListener('click',copyGuestLink);
   if($('toggleUploads')) $('toggleUploads').addEventListener('click',toggleGuestUploads);
   if($('uploadOperatorMedia')) $('uploadOperatorMedia').addEventListener('click',uploadOperatorMedia);
@@ -1147,7 +1195,7 @@ function renderGuestList(){
     var ps=(g.presentations||[]).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
     var p=ps[0];
     var guestMobile=g.mobile_number||g.mobile||g.phone||g.phone_number||'';
-    return '<div class="guest"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+'</div><div>'+escapeHtml(g.company_name)+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
+    var playing=p && p.status==='playing'; return '<div class="guest '+(playing?'is-playing':'')+'"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+(playing?'<span class="playing-badge">NOW PLAYING</span>':'')+'</div><div>'+escapeHtml(g.company_name)+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
   }).join('') || '<div class="empty" style="padding:30px">'+(q?'No matching guest presentations.':'No guest slides.')+'</div>';
 
   Array.prototype.forEach.call($('guestList').querySelectorAll('[data-preview-id]'),function(b){
@@ -1228,6 +1276,10 @@ async function playPresentation(id){
    * Update Supabase first so every connected projector/control client
    * knows which guest presentation is Now Playing.
    */
+  var target=await db.from('presentations').select('meeting_id').eq('id',id).single();
+  if(target.error){alert(target.error.message);return;}
+  var reset=await db.from('presentations').update({status:'ready'}).eq('meeting_id',target.data.meeting_id).eq('status','playing');
+  if(reset.error){alert('Could not clear previous playing item: '+reset.error.message);return;}
   var r=await db.from('presentations').update({status:'playing',played_at:new Date().toISOString()}).eq('id',id);
   if(r.error){alert(r.error.message);return;}
 
@@ -1372,6 +1424,10 @@ function subscribe(){
     .on('postgres_changes',{event:'*',schema:'public',table:'presentations',filter:'meeting_id=eq.'+meeting.id},function(payload){
       if(payload.eventType==='UPDATE' && payload.new.status==='playing'){
         playNow(payload.new.file_url,mediaType(payload.new.file_name),payload.new.file_name);
+      }else if(payload.eventType==='UPDATE' && payload.new.status==='ended'){
+        if(lastScreenData && payload.new.file_url===lastScreenData.url){
+          broadcastLive({type:'CLEAR'});
+        }
       }
       loadGuests();
     })
