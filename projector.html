@@ -187,6 +187,10 @@ function mediaType(name){
   return /\.(mp4|webm|ogg|mov|m4v)$/i.test(name) ? 'video' : 'image';
 }
 
+function guestCompany(g){
+  return (g && (g.company_name || g.company || g.companyName)) || '';
+}
+
 var lastScreenData = null;
 var lastMarqueeText = "";
 try{lastMarqueeText=localStorage.getItem("vaspire_live_marquee")||"";}catch(e){}
@@ -1185,7 +1189,7 @@ function renderGuestList(){
 
   if(q) rows=rows.filter(function(g){
     var ps=g.presentations||[];
-    return [g.name,g.company_name,g.mobile_number,g.mobile,g.phone,g.phone_number,g.member_type,g.seat_number,
+    return [g.name,guestCompany(g),g.mobile_number,g.mobile,g.phone,g.phone_number,g.member_type,g.seat_number,
       ps.map(function(p){return p.file_name;}).join(' ')].join(' ').toLowerCase().indexOf(q)!==-1;
   });
 
@@ -1195,7 +1199,7 @@ function renderGuestList(){
     var ps=(g.presentations||[]).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
     var p=ps[0];
     var guestMobile=g.mobile_number||g.mobile||g.phone||g.phone_number||'';
-    var playing=p && p.status==='playing'; return '<div class="guest '+(playing?'is-playing':'')+'"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+(playing?'<span class="playing-badge">NOW PLAYING</span>':'')+'</div><div>'+escapeHtml(g.company_name)+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
+    var playing=p && p.status==='playing'; return '<div class="guest '+(playing?'is-playing':'')+'"><b>'+(g.member_type==='Paid Member'?escapeHtml(g.seat_number):'—')+'</b><div>'+escapeHtml(g.name)+(playing?'<span class="playing-badge">NOW PLAYING</span>':'')+'</div><div>'+escapeHtml(guestCompany(g))+'</div><div class="small">'+escapeHtml(guestMobile)+'</div><div class="small">'+escapeHtml(g.member_type)+'</div><div class="small">'+(p?escapeHtml(p.file_name):'No slide')+'</div><div class="actions">'+(p?'<button class="secondary" data-preview-id="'+p.id+'">Preview</button><button data-play-id="'+p.id+'">▶ PLAY</button>'+(mediaType(p.file_name)==='video'?'<button class="secondary" data-local-video-id="'+p.id+'">▶ LOCAL PC</button>':'')+'<button class="danger" data-delete-presentation="'+p.id+'">Delete Media</button>':'')+'</div></div>';
   }).join('') || '<div class="empty" style="padding:30px">'+(q?'No matching guest presentations.':'No guest slides.')+'</div>';
 
   Array.prototype.forEach.call($('guestList').querySelectorAll('[data-preview-id]'),function(b){
