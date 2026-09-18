@@ -26,6 +26,8 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:var(--bran
     <form id="form">
       <label for="name">Name</label><input id="name" type="text" required placeholder="Your name">
       <label for="company">Company</label><input id="company" type="text" placeholder="Company / organisation">
+      <label for="contactNumber">Contact Number</label><input id="contactNumber" type="tel" inputmode="numeric" pattern="[0-9]{7,15}" maxlength="15" required placeholder="Enter contact number">
+      <div class="field-note">Numbers only (7–15 digits).</div>
       <label for="memberType">Member Type</label>
       <select id="memberType" style="width:100%;padding:12px;border:1px solid #dcd5e5;border-radius:10px;font-size:15px;background:#fff">
         <option value="Paid Member">Paid Member</option>
@@ -43,7 +45,7 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:var(--bran
     </form>
 
     <div id="playArea" class="hidden">
-      <div id="guestIdentity" class="guest-identity hidden"><div class="eyebrow">YOUR DETAILS</div><div class="identity-main"><div class="seat" id="seatDisplay">—</div><div class="divider"></div><div class="person"><div class="person-name" id="guestNameDisplay">Guest</div><div class="company-name" id="guestCompanyDisplay">—</div></div></div></div>
+      <div id="guestIdentity" class="guest-identity hidden"><div class="eyebrow">YOUR DETAILS</div><div class="identity-main"><div class="seat" id="seatDisplay">—</div><div class="divider"></div><div class="person"><div class="person-name" id="guestNameDisplay">Guest</div><div class="company-name" id="guestCompanyDisplay">—</div><div class="company-name" id="guestContactDisplay">Contact: —</div></div></div></div>
       <div class="my-slide-preview">
         <div class="my-slide-head"><span>YOUR UPLOADED SLIDE</span><span id="slideFileName"></span></div>
         <div class="my-slide-frame"><img id="mySlidePreview" alt="Your uploaded slide preview"></div>
@@ -121,7 +123,7 @@ async function restoreGuestSession(){
 
   try{
     const {data:guest,error:guestError}=await sb.from('guests')
-      .select('id,name,company,member_type,seat_number').eq('id',savedGuestId).eq('meeting_id',meetingId).maybeSingle();
+      .select('*').eq('id',savedGuestId).eq('meeting_id',meetingId).maybeSingle();
     if(guestError || !guest)return false;
 
     const {data:pres,error:presError}=await sb.from('presentations')
@@ -137,13 +139,15 @@ async function restoreGuestSession(){
     memberTypeInput.value=memberType;
     seatDisplay.textContent=guest.seat_number||'—';
     guestNameDisplay.textContent=guest.name||'Guest';
-    guestCompanyDisplay.textContent=guest.company||'Company not provided';
+    guestCompanyDisplay.textContent=guest.company||guest.company_name||'Company not provided';
+    guestContactDisplay.textContent='Contact: '+(guest.mobile_number||guest.mobile||guest.phone||guest.phone_number||guest.contact_number||'—');
     updateSeatField();
     guestIdentity.classList.remove('hidden');
     mySlidePreview.src=pres.file_url;
     slideFileName.textContent=pres.file_name||'Uploaded slide';
     document.getElementById('name').value=guest.name||'';
-    document.getElementById('company').value=guest.company||'';
+    document.getElementById('company').value=guest.company||guest.company_name||'';
+    document.getElementById('contactNumber').value=guest.mobile_number||guest.mobile||guest.phone||guest.phone_number||guest.contact_number||'';
 
     form.classList.add('hidden');
     playArea.classList.remove('hidden');
@@ -181,6 +185,8 @@ form.addEventListener('submit',async(e)=>{
   try{
     const name=document.getElementById('name').value.trim()||'Guest';
     const company=document.getElementById('company').value.trim();
+    const contactNumber=document.getElementById('contactNumber').value.trim();
+    if(!/^[0-9]{7,15}$/.test(contactNumber)){document.getElementById('contactNumber').focus();throw new Error('Contact Number must contain 7–15 digits only.');}
     memberType=memberTypeInput.value;
     const seat=seatNumberInput.value.trim();
     if(memberType==='Paid Member' && seatRequired){
@@ -196,6 +202,14 @@ form.addEventListener('submit',async(e)=>{
     }).select().single();
     if(guestInsert.error)throw guestInsert.error;
 
+    // Save the contact number into whichever compatible column exists in the guests table.
+    const contactColumns=['mobile_number','mobile','phone','phone_number','contact_number'];
+    for(const column of contactColumns){
+      const patch={}; patch[column]=contactNumber;
+      const saved=await sb.from('guests').update(patch).eq('id',guestId);
+      if(!saved.error)break;
+    }
+
     const path=meetingId+'/'+guestId+'-'+Date.now()+'-'+safeName(selectedFile.name);
     const upload=await sb.storage.from('guest-slides').upload(path,selectedFile,{contentType:selectedFile.type,upsert:false});
     if(upload.error)throw upload.error;
@@ -210,6 +224,7 @@ form.addEventListener('submit',async(e)=>{
     seatDisplay.textContent=memberType==='Paid Member' && seatRequired?seat:'—';
     guestNameDisplay.textContent=name;
     guestCompanyDisplay.textContent=company||'Company not provided';
+    guestContactDisplay.textContent='Contact: '+contactNumber;
     guestIdentity.classList.remove('hidden');
     mySlidePreview.src=publicUrl;
     slideFileName.textContent=selectedFile.name||'Uploaded slide';
