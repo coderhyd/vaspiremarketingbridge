@@ -30,6 +30,7 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
     <div class="row">
       <button id="openPreviewScreen" class="secondary">Open Preview Screen</button>
       <button id="openLiveScreen" class="secondary">Open Live Screen</button>
+      <button id="copyProjectorLink" class="secondary">Copy Projector Link</button>
       <button id="fullscreen" class="secondary">Fullscreen</button>
     </div>
   </div>
@@ -44,6 +45,17 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
       <button id="clearMarquee" class="secondary">Clear</button>
     </div>
     <div class="small">The text scrolls at the bottom of the Live Screen.</div>
+  </section>
+
+  <section class="panel">
+    <h3>Remote Projector Display</h3>
+    <div class="row">
+      <button id="openRemoteProjector" class="secondary">Open Projector Screen</button>
+      <button id="copyProjectorLink2" class="secondary">Copy Link</button>
+    </div>
+    <div id="projectorLinkStatus" class="status">Select a meeting to generate a synchronized projector link.</div>
+    <div id="projectorLink" class="url"></div>
+    <div class="small">Open this link on the laptop/PC connected to the projector. Multiple projector screens can use the same meeting link and stay synchronized through Supabase Realtime.</div>
   </section>
 
   <div class="grid">
@@ -335,6 +347,11 @@ function clearLocal(){
   broadcastPreview(data);
 }
 
+function clearLive(){
+  lastScreenData=null;
+  broadcastLive({type:'CLEAR'});
+}
+
 
 function openScreenWindow(kind){
   var isPreview=kind==='preview';
@@ -470,14 +487,42 @@ function broadcastPreview(data){
   broadcastToScreen('preview',data);
 }
 
+async function saveProjectorState(patch){
+  try{
+    if(!db || !meeting || !meeting.id || isScreenMode) return;
+    var payload={
+      meeting_id:meeting.id,
+      state_type:patch.state_type||'CLEAR',
+      media_url:patch.media_url||null,
+      media_type:patch.media_type||null,
+      title:patch.title||null,
+      marquee_text:patch.marquee_text==null?lastMarqueeText:patch.marquee_text,
+      updated_at:new Date().toISOString()
+    };
+    var r=await db.from('projector_state').upsert(payload,{onConflict:'meeting_id'});
+    if(r.error) console.warn('Projector state sync:',r.error.message);
+  }catch(e){console.warn('Projector state sync:',e);}
+}
+
 function broadcastLive(data){
   broadcastToScreen('live',data);
+  if(data && data.type==='PLAY'){
+    saveProjectorState({
+      state_type:'PLAY',
+      media_url:data.url,
+      media_type:data.mediaType,
+      title:data.title||''
+    });
+  }else{
+    saveProjectorState({state_type:'CLEAR',media_url:null,media_type:null,title:null});
+  }
 }
 
 function broadcastMarquee(text){
   lastMarqueeText=String(text||"").trim();
   try{localStorage.setItem("vaspire_live_marquee",lastMarqueeText);}catch(e){}
   broadcastToScreen('live',{type:lastMarqueeText?'MARQUEE':'CLEAR_MARQUEE',text:lastMarqueeText});
+  saveProjectorState({marquee_text:lastMarqueeText});
 }
 
 window.addEventListener('message',function(e){
@@ -509,38 +554,179 @@ function initScreenMode(){
   if(!isScreenMode)return;
 
   document.body.classList.add('screen-mode');
-  screenChannel=new BroadcastChannel('vaspire-projector-screen');
 
-  screenChannel.onmessage=function(e){
-    if(e.data && e.data.type==='PLAY'){
-      lastScreenData=e.data;
-      renderProjectorDocument(document,e.data);
-    }else if(e.data && e.data.type==='CLEAR'){
-      lastScreenData=null;
-      renderProjectorDocument(document,{type:'CLEAR'});
-    }
-  };
+  /* Same-browser fallback. */
+  if('BroadcastChannel' in window){
+    screenChannel=new BroadcastChannel('vaspire-projector-screen');
+    screenChannel.onmessage=function(e){
+      if(e.data && e.data.type==='PLAY'){
+        lastScreenData=e.data;
+        renderProjectorDocument(document,e.data);
+      }else if(e.data && e.data.type==='CLEAR'){
+        lastScreenData=null;
+        renderProjectorDocument(document,{type:'CLEAR'});
+      }else if(e.data && e.data.type==='MARQUEE'){
+        renderScreenMarquee(e.data.text||'');
+      }else if(e.data && e.data.type==='CLEAR_MARQUEE'){
+        renderScreenMarquee('');
+      }
+    };
+  }
 
   window.addEventListener('storage',function(e){
-    if(e.key!=='vaspire_projector_state')return;
-    if(!e.newValue){
+    if(e.key==='vaspire_projector_state' && e.newValue){
+      try{
+        var data=JSON.parse(e.newValue);
+        lastScreenData=data;
+        renderProjectorDocument(document,data);
+      }catch(err){}
+    }
+    if(e.key==='vaspire_live_marquee'){
+      renderScreenMarquee(e.newValue||'');
+    }
+  });
+
+  try{
+    var saved=JSON.parse(localStorage.getItem('vaspire_projector_state')||'null');
+    if(saved && saved.type==='PLAY'){
+      lastScreenData=saved;
+      renderProjectorDocument(document,saved);
+    }else{
+      renderProjectorDocument(document,{type:'CLEAR'});
+    }
+  }catch(e){
+    renderProjectorDocument(document,{type:'CLEAR'});
+  }
+
+  /* Cross-device synchronization through Supabase Realtime. */
+  connectRemoteProjector();
+}
+
+function renderScreenMarquee(text){
+  /* The full-screen renderer has no marquee DOM in screen-mode,
+     so render a fixed ticker directly on the document. */
+  var old=document.getElementById('remoteScreenMarquee');
+  if(old) old.remove();
+  text=String(text||'').trim();
+  if(!text)return;
+  var box=document.createElement('div');
+  box.id='remoteScreenMarquee';
+  box.style.cssText='position:fixed;left:0;right:0;bottom:0;height:58px;background:rgba(0,0,0,.82);color:#fff;display:flex;align-items:center;overflow:hidden;z-index:999;border-top:2px solid #13b8a6';
+  var span=document.createElement('span');
+  span.textContent=text;
+  span.style.cssText='display:inline-block;white-space:nowrap;padding-left:100%;font:800 30px Arial;animation:remoteMarquee 18s linear infinite';
+  var style=document.createElement('style');
+  style.textContent='@keyframes remoteMarquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}';
+  box.appendChild(span);
+  document.body.appendChild(style);
+  document.body.appendChild(box);
+}
+
+async function connectRemoteProjector(){
+  try{
+    screenDb=window.supabase && window.supabase.createClient
+      ? window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)
+      : null;
+
+    if(!screenDb){
+      var s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      await new Promise(function(resolve,reject){
+        s.onload=resolve;
+        s.onerror=reject;
+        document.head.appendChild(s);
+      });
+      screenDb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    }
+
+    var params=new URLSearchParams(window.location.search);
+    screenMeetingId=params.get('meeting');
+
+    if(!screenMeetingId){
+      var active=await screenDb.from('meetings').select('id,title').eq('active',true).maybeSingle();
+      if(active.error)throw active.error;
+      if(active.data)screenMeetingId=active.data.id;
+    }
+
+    if(!screenMeetingId){
       renderProjectorDocument(document,{type:'CLEAR'});
       return;
     }
-    try{
-      var data=JSON.parse(e.newValue);
-      lastScreenData=data;
-      renderProjectorDocument(document,data);
-    }catch(err){}
-  });
 
-  var saved=null;
-  try{saved=JSON.parse(localStorage.getItem('vaspire_projector_state')||'null');}catch(e){}
+    /* Load current synchronized projector state immediately. */
+    var sr=await screenDb.from('projector_state').select('*').eq('meeting_id',screenMeetingId).maybeSingle();
+    if(!sr.error && sr.data){
+      applyRemoteProjectorState(sr.data);
+    }else{
+      /* Fallback to the presentation currently marked PLAYING. */
+      var pr=await screenDb.from('presentations').select('*')
+        .eq('meeting_id',screenMeetingId).eq('status','playing')
+        .order('played_at',{ascending:false}).limit(1);
+      if(!pr.error && pr.data && pr.data[0]){
+        var p=pr.data[0];
+        applyRemoteProjectorState({
+          state_type:'PLAY',
+          media_url:p.file_url,
+          media_type:mediaType(p.file_name),
+          title:p.file_name,
+          marquee_text:''
+        });
+      }
+    }
 
-  if(saved && saved.type==='PLAY'){
-    lastScreenData=saved;
-    renderProjectorDocument(document,saved);
+    if(projectorStateChannel)screenDb.removeChannel(projectorStateChannel);
+    projectorStateChannel=screenDb.channel('remote-projector-'+screenMeetingId)
+      .on('postgres_changes',{
+        event:'*',schema:'public',table:'projector_state',
+        filter:'meeting_id=eq.'+screenMeetingId
+      },function(payload){
+        if(payload.eventType==='DELETE'){
+          renderProjectorDocument(document,{type:'CLEAR'});
+          renderScreenMarquee('');
+          return;
+        }
+        applyRemoteProjectorState(payload.new);
+      })
+      .on('postgres_changes',{
+        event:'UPDATE',schema:'public',table:'presentations',
+        filter:'meeting_id=eq.'+screenMeetingId
+      },function(payload){
+        if(payload.new.status==='playing'){
+          applyRemoteProjectorState({
+            state_type:'PLAY',
+            media_url:payload.new.file_url,
+            media_type:mediaType(payload.new.file_name),
+            title:payload.new.file_name,
+            marquee_text:''
+          });
+        }else if(payload.new.status==='ended' &&
+                  lastScreenData &&
+                  payload.new.file_url===lastScreenData.url){
+          renderProjectorDocument(document,{type:'CLEAR'});
+        }
+      })
+      .subscribe();
+
+  }catch(err){
+    console.error('Remote projector sync:',err);
+    /* Keep local/same-browser projector behavior available. */
+  }
+}
+
+function applyRemoteProjectorState(state){
+  if(!state)return;
+  renderScreenMarquee(state.marquee_text||'');
+  if(state.state_type==='PLAY' && state.media_url){
+    var data={
+      type:'PLAY',
+      url:state.media_url,
+      mediaType:state.media_type||mediaType(state.title||state.media_url),
+      title:state.title||''
+    };
+    lastScreenData=data;
+    renderProjectorDocument(document,data);
   }else{
+    lastScreenData=null;
     renderProjectorDocument(document,{type:'CLEAR'});
   }
 }
@@ -728,7 +914,7 @@ function initLocal(){
   $('showMarquee').addEventListener('click',function(){broadcastMarquee($('marqueeText').value);});
   $('clearMarquee').addEventListener('click',function(){$('marqueeText').value='';broadcastMarquee('');});
   $('marqueeText').value=lastMarqueeText;
-  $('stopLive').addEventListener('click',clearLocal);
+  $('stopLive').addEventListener('click',clearLive);
   $('loadFolder').addEventListener('click',loadLocalFolder);
   $('previous').addEventListener('click',function(){
     if(localPlaylist.length) playLocal(playlistIndex-1);
@@ -762,6 +948,9 @@ var realtimeChannel=null;
 
 var SUPABASE_URL='https://zhufcryqamaubxjorjgm.supabase.co';
 var SUPABASE_KEY='sb_publishable_X19Y-4uYxO9HPosfbIg2yQ_tMf07glN';
+var projectorStateChannel=null;
+var screenDb=null;
+var screenMeetingId=null;
 
 function loadSupabase(){
   if(window.supabase && window.supabase.createClient){
@@ -791,6 +980,41 @@ async function startSupabase(){
   }
 }
 
+function getProjectorLink(){
+  if(!meeting || !meeting.id)return '';
+  var u=new URL(window.location.href);
+  u.search='';
+  u.hash='';
+  u.searchParams.set('screen','2');
+  u.searchParams.set('meeting',meeting.id);
+  return u.href;
+}
+
+function updateProjectorLink(){
+  var link=getProjectorLink();
+  if($('projectorLink'))$('projectorLink').textContent=link||'Select a meeting first.';
+  if($('projectorLinkStatus')){
+    $('projectorLinkStatus').textContent=link
+      ? 'Synchronized projector link ready for: '+meeting.title
+      : 'Select a meeting to generate a synchronized projector link.';
+  }
+}
+
+async function copyProjectorLink(){
+  var link=getProjectorLink();
+  if(!link)return alert('Select a meeting first.');
+  try{
+    await navigator.clipboard.writeText(link);
+    if($('projectorLinkStatus'))$('projectorLinkStatus').textContent='Projector link copied.';
+  }catch(e){prompt('Copy projector link:',link);}
+}
+
+function openRemoteProjector(){
+  var link=getProjectorLink();
+  if(!link)return alert('Select a meeting first.');
+  window.open(link,'vaspire_remote_projector','width=1400,height=900,resizable=yes,scrollbars=no');
+}
+
 function openRemoteControl(){
   if(!meeting)return alert('Select a meeting first.');
   if(!meeting.code)return alert('This meeting has no session code.');
@@ -804,6 +1028,9 @@ function bindSupabaseButtons(){
   if($('createMeeting')) $('createMeeting').addEventListener('click',createMeeting);
   if($('openRemote')) $('openRemote').addEventListener('click',openRemoteControl);
   if($('copyLink')) $('copyLink').addEventListener('click',copyGuestLink);
+  if($('copyProjectorLink')) $('copyProjectorLink').addEventListener('click',copyProjectorLink);
+  if($('copyProjectorLink2')) $('copyProjectorLink2').addEventListener('click',copyProjectorLink);
+  if($('openRemoteProjector')) $('openRemoteProjector').addEventListener('click',openRemoteProjector);
   if($('toggleUploads')) $('toggleUploads').addEventListener('click',toggleGuestUploads);
   if($('uploadOperatorMedia')) $('uploadOperatorMedia').addEventListener('click',uploadOperatorMedia);
   if($('operatorMemberType')) if($('operatorMemberType')) $('operatorMemberType').addEventListener('change',updateOperatorSeatField);
@@ -988,6 +1215,7 @@ async function selectMeeting(id){
   try{ localStorage.setItem(SELECTED_MEETING_KEY,String(meeting.id)); }catch(e){}
 
   $('meetingSelect').value=meeting.id;
+  updateProjectorLink();
 
   setStatus($('meetingStatus'),meeting.title+' · '+(meeting.meeting_date||'No date')+' · '+(meeting.active?'● ACTIVE MEETING · ':'')+(meeting.guest_upload_enabled?'UPLOADS ENABLED':'UPLOADS DISABLED')+' · Seat '+(meeting.seat_required!==false?'Required':'Optional'),true);
   $('guestEnabled').checked=!!meeting.guest_upload_enabled;
@@ -1265,7 +1493,7 @@ async function deleteGuestPresentation(id){
   var d=await db.from('presentations').delete().eq('id',id);
   if(d.error){alert('Could not delete guest media: '+d.error.message);return;}
 
-  if(lastScreenData && lastScreenData.url===p.file_url)broadcastScreen({type:'CLEAR'});
+  if(lastScreenData && lastScreenData.url===p.file_url)clearLive();
   await loadGuests();
 }
 
