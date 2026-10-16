@@ -13,7 +13,7 @@
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:15px}
 h3{margin:3px 0 12px}.row,.toolbar{display:flex;gap:7px;flex-wrap:wrap}button{border:0;border-radius:8px;padding:10px 13px;background:var(--accent);color:#031511;font-weight:800;cursor:pointer}button.secondary{background:#213a50;color:#fff}button.danger{background:var(--danger);color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
 .field{margin:9px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
-input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#071522;color:#fff}
+input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:#071522;color:#fff;font:inherit}textarea{min-height:76px;resize:vertical}
 .status{padding:9px;border-radius:8px;background:#071522;color:var(--muted);margin:9px 0}.ok{color:#61e4ca}.bad{color:#ff9a96}
 .meetings,.list{max-height:380px;overflow:auto}.meeting{padding:9px;border:1px solid var(--line);border-radius:8px;margin:6px 0;cursor:pointer}.meeting.active{border-color:var(--accent);background:#123042}
 .qr{background:#fff;padding:10px;width:max-content;margin:10px auto;border-radius:8px;min-height:20px}.url{font-size:11px;color:#9debe0;word-break:break-all}
@@ -36,6 +36,17 @@ input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--li
   </div>
 
   <div id="appStatus" class="status">Starting control panel…</div>
+
+  <section class="panel">
+    <h3>Show QR Code on Live Screen</h3>
+    <div class="field"><label>Heading displayed above the QR code</label><input id="liveQrHeading" maxlength="100" value="Upload Your Presentation"></div>
+    <div class="field"><label>Instructions displayed with the QR code</label><textarea id="liveQrInstructions" maxlength="500">1. Scan this QR code using your phone camera. 2. Open the link. 3. Select your presentation or image and upload it. 4. After the upload completes, click the “Play my slide” button to display it on the projector. 5. Wait for confirmation.</textarea></div>
+    <div class="row">
+      <button id="showQrLive">Display QR on Live Screen</button>
+      <button id="clearQrLive" class="secondary">Clear QR</button>
+    </div>
+    <div class="small" style="margin-top:8px">The QR opens the selected meeting's guest upload page. Select a meeting first. The QR and instructions will appear on synchronized projector screens.</div>
+  </section>
 
   <section class="panel marquee-panel">
     <h3>Live Screen Marquee</h3>
@@ -236,6 +247,24 @@ function renderProjectorDocument(doc,data){
     return;
   }
 
+  if(data.type==='QR'){
+    body.style.cssText='margin:0;background:#06101c;width:100vw;height:100vh;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:4vh 5vw;color:#fff;font-family:Arial,sans-serif;text-align:center';
+    var heading=doc.createElement('div');
+    heading.textContent=data.title||'Scan the QR Code';
+    heading.style.cssText='font-size:clamp(30px,4vw,64px);font-weight:800;color:#13b8a6';
+    body.appendChild(heading);
+    var qr=doc.createElement('img');
+    qr.alt='QR code';
+    qr.src='https://api.qrserver.com/v1/create-qr-code/?size=520x520&margin=12&data='+encodeURIComponent(data.url||'');
+    qr.style.cssText='width:min(48vh,42vw);height:min(48vh,42vw);max-width:520px;max-height:520px;background:#fff;padding:12px;border-radius:14px;object-fit:contain';
+    body.appendChild(qr);
+    var instructions=doc.createElement('div');
+    instructions.textContent=data.instructions||'Scan the QR code with your phone camera and follow the link.';
+    instructions.style.cssText='max-width:1200px;font-size:clamp(18px,2vw,30px);line-height:1.5;white-space:pre-line;color:#fff';
+    body.appendChild(instructions);
+    return;
+  }
+
   if(data.mediaType==='video'){
     var video=doc.createElement('video');
     video.src=data.url;
@@ -417,8 +446,22 @@ background:rgba(0,0,0,.62);color:#fff;font:700 14px Arial;z-index:5}
     }
     if(data.type==='MARQUEE'){renderMarquee(data.text);return;}
     if(data.type==='CLEAR_MARQUEE'){renderMarquee('');return;}
+    if(mode==='live' && data.type==='QR'){
+      renderMarquee('');
+      stage.innerHTML='';
+      stage.style.cssText='width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:4vh 5vw;box-sizing:border-box;color:#fff;text-align:center;font-family:Arial,sans-serif';
+      var h=document.createElement('div');h.textContent=data.title||'Scan the QR Code';
+      h.style.cssText='font-size:clamp(30px,4vw,64px);font-weight:800;color:#13b8a6';stage.appendChild(h);
+      var q=document.createElement('img');q.alt='QR code';
+      q.src='https://api.qrserver.com/v1/create-qr-code/?size=520x520&margin=12&data='+encodeURIComponent(data.url||'');
+      q.style.cssText='width:min(48vh,42vw);height:min(48vh,42vw);max-width:520px;max-height:520px;background:#fff;padding:12px;border-radius:14px;object-fit:contain';stage.appendChild(q);
+      var ins=document.createElement('div');ins.textContent=data.instructions||'Scan the QR code with your phone camera and follow the link.';
+      ins.style.cssText='max-width:1200px;font-size:clamp(18px,2vw,30px);line-height:1.5;white-space:pre-line;color:#fff';stage.appendChild(ins);
+      return;
+    }
     if(data.type!==(mode==='preview'?'PREVIEW':'PLAY')) return;
 
+    stage.style.cssText='width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#000';
     stage.innerHTML='';
     if(data.mediaType==='video'){
       var v=document.createElement('video');
@@ -513,8 +556,16 @@ function broadcastLive(data){
       media_type:data.mediaType,
       title:data.title||''
     });
+  }else if(data && data.type==='QR'){
+    saveProjectorState({
+      state_type:'QR',
+      media_url:data.url,
+      media_type:'qr',
+      title:data.title||'Scan the QR Code',
+      marquee_text:data.instructions||''
+    });
   }else{
-    saveProjectorState({state_type:'CLEAR',media_url:null,media_type:null,title:null});
+    saveProjectorState({state_type:'CLEAR',media_url:null,media_type:null,title:null,marquee_text:''});
   }
 }
 
@@ -715,8 +766,18 @@ async function connectRemoteProjector(){
 
 function applyRemoteProjectorState(state){
   if(!state)return;
-  renderScreenMarquee(state.marquee_text||'');
-  if(state.state_type==='PLAY' && state.media_url){
+  if(state.state_type==='QR' && state.media_url){
+    renderScreenMarquee('');
+    var qrData={
+      type:'QR',
+      url:state.media_url,
+      title:state.title||'Scan the QR Code',
+      instructions:state.marquee_text||''
+    };
+    lastScreenData=qrData;
+    renderProjectorDocument(document,qrData);
+  }else if(state.state_type==='PLAY' && state.media_url){
+    renderScreenMarquee(state.marquee_text||'');
     var data={
       type:'PLAY',
       url:state.media_url,
@@ -726,6 +787,7 @@ function applyRemoteProjectorState(state){
     lastScreenData=data;
     renderProjectorDocument(document,data);
   }else{
+    renderScreenMarquee(state.marquee_text||'');
     lastScreenData=null;
     renderProjectorDocument(document,{type:'CLEAR'});
   }
@@ -912,6 +974,8 @@ function initLocal(){
   });
   $('clearPreview').addEventListener('click',clearLocal);
   $('showMarquee').addEventListener('click',function(){broadcastMarquee($('marqueeText').value);});
+  $('showQrLive').addEventListener('click',showQrOnLiveScreen);
+  $('clearQrLive').addEventListener('click',clearQrOnLiveScreen);
   $('clearMarquee').addEventListener('click',function(){$('marqueeText').value='';broadcastMarquee('');});
   $('marqueeText').value=lastMarqueeText;
   $('stopLive').addEventListener('click',clearLive);
@@ -1013,6 +1077,33 @@ function openRemoteProjector(){
   var link=getProjectorLink();
   if(!link)return alert('Select a meeting first.');
   window.open(link,'vaspire_remote_projector','width=1400,height=900,resizable=yes,scrollbars=no');
+}
+
+function getGuestUploadUrl(){
+  if(!meeting || !meeting.id)return '';
+  var u=new URL('/guest.html',window.location.origin);
+  u.searchParams.set('meeting',meeting.id);
+  return u.href;
+}
+
+function showQrOnLiveScreen(){
+  if(!meeting || !meeting.id){
+    alert('Select a meeting first.');
+    return;
+  }
+  var url=getGuestUploadUrl();
+  if(!url){
+    alert('Could not create the guest upload link.');
+    return;
+  }
+  var heading=$('liveQrHeading').value.trim()||'Upload Your Presentation';
+  var instructions=$('liveQrInstructions').value.trim()||
+    'Scan this QR code using your phone camera, open the link, upload your presentation, then click the “Play my slide” button to display it on the projector.';
+  broadcastLive({type:'QR',url:url,title:heading,instructions:instructions});
+}
+
+function clearQrOnLiveScreen(){
+  clearLive();
 }
 
 function openRemoteControl(){
