@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sai Life Sciences — Business Card Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 12 12 3v9z" fill="#E9531F"/><path d="M12 3l9 9h-9z" fill="#F5921E"/><path d="M3 12h9v9z" fill="#0B5469"/><path d="M12 12h9l-9 9z" fill="#1A9DD9"/></svg>
+    <span><strong>Card Generator</strong> · Sai Life Sciences · 85 × 55 mm</span>
+  </div>
+  <div class="top-right"><div class="font-status" id="fontStatus">Loading fonts…</div><button type="button" class="btn primary" id="downloadTop">Download PDF</button></div>
+</header>
+
+<main class="layout">
+  <!-- FORM -->
+  <section class="panel form-panel" aria-label="Card details">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="single" role="tab">Single card</button>
+      <button class="tab" data-tab="batch" role="tab">Batch (CSV)</button>
+      <button class="tab" data-tab="settings" role="tab">Settings</button>
+      <button class="tab" data-tab="fonts" role="tab">Fonts</button>
+    </div>
+
+    <form id="cardForm" autocomplete="off">
+      <div class="tabpane" data-pane="single">
+        <h2>Card details</h2>
+        <label>Unit / address <small>Manage in Settings</small><select name="unit" id="unitSelect"></select></label>
+        <label>Full name<input name="name" required></label>
+        <label>Designation <small>One line per row. Long lines wrap automatically.</small>
+          <textarea name="title" rows="3"></textarea></label>
+        <div class="row2">
+          <label>Mobile No<input name="mobile" inputmode="tel" placeholder="+91 98480 12345"></label>
+          <label>Direct No <small>if given</small><input name="direct" inputmode="tel" placeholder="+91 40 6815 6000"></label>
+        </div>
+        <label>Email<input name="email" type="email"></label>
+      </div>
+
+      <div class="tabpane hidden" data-pane="batch">
+        <h2>Batch from CSV</h2>
+        <p class="hint">Columns: <code>name, title, mobile, direct, email, unit</code>. Use <code>|</code> inside the title column for a line break. The <code>unit</code> column must match a unit name in Settings (e.g. <code>Unit II</code>); if blank, the unit selected on the Single card tab is used.</p>
+        <div class="btnrow">
+          <button type="button" class="btn ghost" id="sampleCsv">Download sample CSV</button>
+          <label class="btn ghost file">Choose CSV<input type="file" id="csvFile" accept=".csv,text/csv" hidden></label>
+        </div>
+        <div id="csvInfo" class="hint"></div>
+        <button type="button" class="btn primary" id="batchBtn" disabled>Generate batch PDF</button>
+      </div>
+
+      <div class="tabpane hidden" data-pane="settings">
+        <h2>Units &amp; addresses</h2>
+        <p class="hint">Each unit prints its own company name and address on the back of the card and in the QR contact. Changes apply instantly and are saved in this browser. Use <strong>Export settings</strong> to back them up or copy them to another computer.</p>
+        <div id="unitList" class="unit-list"></div>
+        <button type="button" class="btn ghost" id="addUnit">+ Add unit</button>
+
+        <h2>Website</h2>
+        <div class="row2">
+          <label>Printed on card<input id="setWebsite"></label>
+          <label>QR link<input id="setWebsiteUrl"></label>
+        </div>
+
+        <h2>Phone number labels</h2>
+        <label>When both Mobile and Direct are given<select id="setLabels">
+          <option value="md">M +91… / D +91…</option>
+          <option value="full">Mobile +91… / Direct +91…</option>
+          <option value="none">No labels</option>
+        </select></label>
+        <label class="radio"><input type="checkbox" id="setLabelSingle"> Also label a single number</label>
+        <label>Order<select id="setOrder">
+          <option value="md">Mobile first, then Direct</option>
+          <option value="dm">Direct first, then Mobile</option>
+        </select></label>
+
+        <div class="btnrow">
+          <button type="button" class="btn ghost" id="exportSettings">Export settings</button>
+          <label class="btn ghost file">Import settings<input type="file" id="importSettings" accept=".json,application/json" hidden></label>
+        </div>
+      </div>
+
+      <div class="tabpane hidden" data-pane="fonts">
+        <h2>Brand fonts</h2>
+        <p class="hint">The original card uses <strong>Calibre Regular</strong> and <strong>Calibre Semibold</strong> (Klim Type Foundry). Use your licensed copies for an exact match. They stay in this browser tab only (re-upload after reloading the page). Without them, <strong>Barlow Semi Condensed</strong> is used — its letter widths are within ~1–3 % of Calibre.</p>
+        <h3>Option 1 — Fonts installed on this computer</h3>
+        <p class="hint">Works in <strong>Chrome or Edge</strong> on Windows/Mac. The browser will ask permission to see your installed fonts. Note: Microsoft <strong>Calibri</strong> is a different font from Klim <strong>Calibre</strong>.</p>
+        <button type="button" class="btn ghost" id="localFontsBtn">Use fonts installed on this computer</button>
+        <div id="localFontsBox" class="hidden">
+          <label>Regular (body text)<select id="localReg"></select></label>
+          <label>Semibold (name, company)<select id="localSemi"></select></label>
+          <button type="button" class="btn primary" id="localApply">Apply these fonts</button>
+        </div>
+        <p id="localFontsMsg" class="hint"></p>
+
+        <h3>Option 2 — Upload font files</h3>
+        <p class="hint">On Windows the files are in <code>C:\Windows\Fonts</code> (all users) or <code>%LOCALAPPDATA%\Microsoft\Windows\Fonts</code> (current user). Copy them to the Desktop first if the picker shows the Fonts folder as icons.</p>
+        <label>Regular file<input type="file" id="fontReg" accept=".otf,.ttf"></label>
+        <label>Semibold file<input type="file" id="fontSemi" accept=".otf,.ttf"></label>
+        <ul id="fontWarn" class="warnings"></ul>
+        <button type="button" class="btn ghost" id="fontReset">Use fallback fonts</button>
+      </div>
+    </form>
+
+    <div class="output-opts">
+      <h2>Output</h2>
+      <label class="radio"><input type="radio" name="out" value="print" checked> Print-ready: 3 mm bleed + crop marks (108.28 × 78.28 mm page)</label>
+      <label class="radio"><input type="radio" name="out" value="trim"> Trim size only (85 × 55 mm)</label>
+      <div class="btnrow">
+        <button type="button" class="btn primary" id="downloadBtn">Download PDF</button>
+        <button type="button" class="btn ghost" id="resetBtn">Reset to sample</button>
+      </div>
+      <ul id="warnings" class="warnings" aria-live="polite"></ul>
+    </div>
+  </section>
+
+  <!-- PREVIEW -->
+  <section class="panel preview-panel" aria-label="Preview">
+    <div class="preview-head">
+      <h2>Live preview</h2>
+      <label class="toggle"><input type="checkbox" id="guides"> Show guides</label>
+    </div>
+    <figure class="card"><figcaption>Front</figcaption><svg id="svgFront" viewBox="0 0 306.945 221.906"></svg></figure>
+    <figure class="card"><figcaption>Back</figcaption><svg id="svgBack" viewBox="0 0 306.945 221.906"></svg></figure>
+
+    <details class="spec" open>
+      <summary>Layout specification (measured from the original artwork)</summary>
+      <p class="hint">All positions in mm from the <strong>top-left trim corner</strong>. Text positions are left edge and <strong>baseline</strong>.</p>
+      <table>
+        <thead><tr><th>Element</th><th>X</th><th>Y</th><th>Size</th><th>Style</th></tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="5">Document</td></tr>
+          <tr><td>Card trim</td><td colspan="2">85.00 × 55.00 mm</td><td>Bleed 3 mm</td><td>Page 108.28 × 78.28 mm</td></tr>
+          <tr class="grp"><td colspan="5">Front</td></tr>
+          <tr><td>Logo lockup (symbol + “Sai”)</td><td>6.07</td><td>4.35 (top)</td><td>25.00 × 8.40 mm</td><td>Vector, CMYK</td></tr>
+          <tr><td>— Symbol (diamond)</td><td>6.07</td><td>4.35</td><td>8.40 × 8.40 mm</td><td>4 facets</td></tr>
+          <tr><td>— Wordmark “Sai”</td><td>16.47</td><td>4.46</td><td>14.61 × 8.17 mm</td><td>K100 + rich black</td></tr>
+          <tr><td>Tagline “Make it / better together”</td><td>16.50</td><td>16.34 / 18.49</td><td>6.11 pt</td><td>Semibold</td></tr>
+          <tr><td>Name</td><td>42.73</td><td>9.36</td><td>9 pt</td><td>Semibold, K100</td></tr>
+          <tr><td>Designation lines</td><td>42.73</td><td>12.83, 16.01, 19.18…</td><td>9 pt / 9 pt leading</td><td>Regular, K80</td></tr>
+          <tr><td>Mobile / Direct</td><td>42.44</td><td>45.92, 9 pt per extra line upward</td><td>9 pt</td><td>Regular, K80</td></tr>
+          <tr><td>Email (bottom line)</td><td>42.44</td><td>49.09</td><td>8.5 pt</td><td>Regular, K80</td></tr>
+          <tr class="grp"><td colspan="5">Back</td></tr>
+          <tr><td>Company name</td><td>5.76</td><td>27.50</td><td>9 pt</td><td>Semibold, rich black</td></tr>
+          <tr><td>Address lines</td><td>5.76</td><td>30.67 … 43.37</td><td>9 pt / 9 pt leading</td><td>Regular, K80</td></tr>
+          <tr><td>Website (bottom line)</td><td>5.76</td><td>49.03</td><td>9 pt</td><td>Regular, K80</td></tr>
+          <tr><td>QR code (vCard)</td><td>55.52</td><td>25.66 (top)</td><td>23.49 × 23.49 mm</td><td>Rich black, no quiet zone</td></tr>
+        </tbody>
+      </table>
+      <h3>Alignment rules used by the generator</h3>
+      <ul class="rules">
+        <li>Outer margins ≈ 6 mm: logo left 6.07, QR right 5.99, back text left 5.76 mm.</li>
+        <li>Front text column starts at 42.73 mm (≈ half the card width). Name block is <strong>top-anchored</strong> at the 9.36 mm baseline; designation flows down at 9 pt leading.</li>
+        <li>Contact block is <strong>bottom-anchored</strong>: the email baseline stays at 49.09 mm, a second number (Direct) stacks upward.</li>
+        <li>Common bottom line ≈ 49.1 mm on both sides: front email baseline (49.09), back website baseline (49.03) and QR bottom edge (49.15).</li>
+        <li>Back address block is bottom-anchored 16 pt above the website line; the company name cap height lines up with the QR top (25.66 mm) when there are 5 address lines.</li>
+        <li>Text wider than its column wraps (designation, address) or shrinks down to 7 pt (name, phone, email, website). Front column max width 36.3 mm; back column max width 47.3 mm (6 mm gap before the QR).</li>
+        <li>Colours are CMYK: K100 name, K80 body text, C91 M79 Y62 K97 rich black for company name and QR — exactly as in the original file.</li>
+      </ul>
+    </details>
+  </section>
+</main>
+
+<script src="lib/pdf-lib.min.js"></script>
+<script src="lib/fontkit.umd.min.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
